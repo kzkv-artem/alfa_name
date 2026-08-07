@@ -1,0 +1,15 @@
+# Общий слой
+openai>=1.40.0          # OpenAI-совместимый SDK: DeepSeek, OpenRouter, свой шлюз
+python-dotenv>=1.0.0    # чтение .env в локальной разработке
+
+# Кассовый разрыв
+pandas>=2.0.0
+catboost>=1.2
+scikit-learn>=1.3.0
+
+# Графики в ноутбуках-витринах
+matplotlib>=3.7.0
+
+# API-слой
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0

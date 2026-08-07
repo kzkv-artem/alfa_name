@@ -1,0 +1,18 @@
+# Секреты — никогда в репозиторий
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Артефакты обучения и БД
+catboost_info/
+*.db
+
+# Прочее
+.DS_Store
+.ipynb_checkpoints/
+.idea/
