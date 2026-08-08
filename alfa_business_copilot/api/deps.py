@@ -48,7 +48,14 @@ class LazyLLMClient(LLMClient):
 
 
 def get_cashflow_conn(request: Request) -> Iterator[sqlite3.Connection]:
-    conn = sqlite3.connect(request.app.state.cashflow_db_path)
+    # check_same_thread=False: FastAPI выполняет pre-yield часть этой
+    # generator-зависимости (contextmanager_in_threadpool) и тело хендлера
+    # (run_endpoint_function) каждое своим отдельным run_in_threadpool —
+    # это НЕ гарантированно один и тот же поток threadpool'а anyio, даже в
+    # рамках одного запроса. Соединение по-прежнему одно на запрос, не
+    # шарится между запросами — просто ему нельзя запрещать смену потока
+    # внутри жизни одного запроса.
+    conn = sqlite3.connect(request.app.state.cashflow_db_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     try:
         yield conn
@@ -57,7 +64,7 @@ def get_cashflow_conn(request: Request) -> Iterator[sqlite3.Connection]:
 
 
 def get_gov_conn(request: Request) -> Iterator[sqlite3.Connection]:
-    conn = sqlite3.connect(request.app.state.gov_db_path)
+    conn = sqlite3.connect(request.app.state.gov_db_path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     try:
         yield conn
