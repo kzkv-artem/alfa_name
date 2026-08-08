@@ -12,6 +12,16 @@ from alfa_agent.gov_support import GovSupportAgent
 from alfa_agent.insurance import ClientFeatures, InsuranceAdvisorAgent
 from alfa_agent.llm import LLMClient, get_client
 
+from api.demo import DemoLLMClient, is_demo_mode
+
+
+def build_llm_client() -> LLMClient:
+    """Что именно подставляется агентам в качестве LLMClient — единственное
+    решение, которое отличает DEMO_MODE от обычного запуска."""
+    if is_demo_mode():
+        return DemoLLMClient()
+    return LazyLLMClient()
+
 
 class LazyLLMClient(LLMClient):
     """Defers real LLM client construction (and its config validation) to the

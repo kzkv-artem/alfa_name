@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Альфа-Бизнес для бьюти-мастеров</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --milk:#FAF6F3;
+    --ink:#241E1C;
+    --ink-soft:#6E625D;
+    --red:#EF3124;
+    --clay:#E9D2C6;
+    --clay-deep:#C99B85;
+    --line:#E6DCD5;
+    --white:#FFFFFF;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--milk);color:var(--ink);font-family:"Onest",system-ui,sans-serif;
+    font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,.u{font-family:"Unbounded",system-ui,sans-serif;font-weight:600;letter-spacing:-.02em;line-height:1.12}
+  a{color:inherit}
+  button,input,select{font:inherit;color:inherit}
+  :focus-visible{outline:2.5px solid var(--red);outline-offset:3px;border-radius:4px}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+  .bar{position:sticky;top:0;z-index:30;background:rgba(250,246,243,.88);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .bar .wrap{display:flex;align-items:center;gap:16px;height:64px}
+  .logo{display:flex;align-items:center;gap:9px;font-weight:600;font-size:15px}
+  .logo i{width:26px;height:26px;border-radius:8px;background:var(--red);color:#fff;
+    display:grid;place-items:center;font-style:normal;font-weight:700;font-size:14px}
+  .bar nav{margin-left:auto;display:flex;gap:26px;font-size:14.5px;color:var(--ink-soft)}
+  .bar nav a{text-decoration:none}
+  .bar nav a:hover{color:var(--ink)}
+  .btn{display:inline-block;padding:14px 26px;border-radius:999px;font-weight:600;font-size:15px;
+    text-decoration:none;border:none;cursor:pointer;transition:transform .15s,background .15s}
+  .btn-red{background:var(--red);color:#fff}
+  .btn-red:hover{background:#D42A1F;transform:translateY(-1px)}
+  .btn-line{background:transparent;color:var(--ink);border:1.5px solid var(--ink)}
+  .btn-line:hover{background:var(--ink);color:var(--milk)}
+  .btn-sm{padding:10px 20px;font-size:14px}
+
+  .hero{padding:74px 0 20px}
+  .hero .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
+  .eyebrow{font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--clay-deep);
+    font-weight:600;margin-bottom:20px}
+  .hero h1{font-size:clamp(34px,4.6vw,54px)}
+  .hero h1 em{font-style:normal;color:var(--red)}
+  .hero p.lead{font-size:19px;color:var(--ink-soft);margin:22px 0 32px;max-width:30em}
+  .hero .cta{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .hero .fine{font-size:13.5px;color:var(--ink-soft);margin-top:18px}
+
+  .day{background:var(--white);border:1px solid var(--line);border-radius:26px;padding:26px 24px 20px;
+    box-shadow:0 24px 60px -30px rgba(36,30,28,.28)}
+  .day-h{display:flex;align-items:baseline;gap:10px;margin-bottom:20px}
+  .day-h b{font-family:"Unbounded",sans-serif;font-size:15px;font-weight:600}
+  .day-h span{margin-left:auto;font-size:13px;color:var(--ink-soft)}
+  .slot{display:flex;align-items:center;gap:14px;padding:13px 0;border-top:1px solid var(--line);
+    opacity:0;transform:translateY(8px);animation:rise .5s forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+  .slot time{font-variant-numeric:tabular-nums;font-size:14px;color:var(--ink-soft);width:46px;flex:0 0 46px}
+  .slot .what{flex:1;font-size:15px;font-weight:500}
+  .slot .what small{display:block;font-weight:400;font-size:12.5px;color:var(--ink-soft)}
+  .slot .amt{font-variant-numeric:tabular-nums;font-weight:600;font-size:15px;white-space:nowrap}
+  .slot.gap .what{color:var(--ink-soft);font-weight:400}
+  .slot.gap .amt{color:var(--clay-deep);font-weight:400;font-size:13.5px}
+  .day-f{display:flex;align-items:center;gap:10px;margin-top:18px;padding-top:16px;
+    border-top:2px solid var(--ink);font-family:"Unbounded",sans-serif}
+  .day-f span{font-size:13px;font-weight:400;font-family:"Onest",sans-serif;color:var(--ink-soft)}
+  .day-f b{margin-left:auto;font-size:21px}
+
+  .tape{background:var(--ink);color:var(--milk);margin-top:70px;padding:16px 0;overflow:hidden}
+  .tape-in{display:flex;gap:44px;white-space:nowrap;font-size:14px;letter-spacing:.04em;
+    animation:slide 32s linear infinite}
+  .tape-in span{opacity:.85}
+  @keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+  .sec{padding:78px 0;border-bottom:1px solid var(--line)}
+  .sec-h{display:grid;grid-template-columns:112px 1fr;gap:24px;align-items:start;margin-bottom:34px}
+  .stamp{font-family:"Unbounded",sans-serif;font-size:22px;color:var(--red);padding-top:2px}
+  .sec-h h2{font-size:clamp(25px,3vw,34px);max-width:16em}
+  .sec-h p{color:var(--ink-soft);margin-top:12px;max-width:34em}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;
+    margin-left:136px}
+  .card{background:var(--white);border:1px solid var(--line);border-radius:20px;padding:22px}
+  .card h3{font-size:16.5px;margin-bottom:8px}
+  .card p{font-size:14.5px;color:var(--ink-soft);line-height:1.5}
+  .card .tag{display:inline-block;margin-top:14px;font-size:12.5px;font-weight:600;
+    background:var(--clay);color:#5C3A2B;padding:5px 11px;border-radius:999px}
+  .card.accent{background:var(--ink);border-color:var(--ink);color:var(--milk)}
+  .card.accent p{color:#C9BDB7}
+  .card.accent .tag{background:var(--red);color:#fff}
+
+  .quotebox{margin-left:136px;background:var(--clay);border-radius:20px;padding:26px 28px;
+    font-size:17px;line-height:1.5;max-width:44em}
+  .quotebox b{font-family:"Unbounded",sans-serif;font-weight:600}
+
+  .price{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:8px}
+  .price div{background:var(--white);border:1px solid var(--line);border-radius:18px;padding:20px}
+  .price b{font-family:"Unbounded",sans-serif;font-size:20px;display:block;margin-bottom:4px}
+  .price span{font-size:14px;color:var(--ink-soft)}
+
+  .final{padding:86px 0 96px;background:var(--ink);color:var(--milk);border:none}
+  .final h2{font-size:clamp(28px,3.6vw,42px);max-width:14em;margin-bottom:16px}
+  .final p{color:#C9BDB7;max-width:32em;margin-bottom:34px}
+  .form{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:560px}
+  .form input,.form select{background:#312926;border:1.5px solid #453B37;border-radius:14px;
+    padding:15px 17px;color:var(--milk);font-size:15px;width:100%}
+  .form input::placeholder{color:#8C7E78}
+  .form input:focus,.form select:focus{border-color:var(--red);outline:none}
+  .form .full{grid-column:1/-1}
+  .form button{grid-column:1/-1;justify-self:start}
+  .final .fine{font-size:13px;color:#8C7E78;margin-top:18px;max-width:34em}
+
+  footer{padding:34px 0;font-size:13px;color:var(--ink-soft)}
+  footer .wrap{display:flex;gap:16px;flex-wrap:wrap}
+
+  @media (max-width:860px){
+    .hero .grid{grid-template-columns:1fr;gap:38px}
+    .sec-h{grid-template-columns:1fr;gap:8px}
+    .cards,.quotebox{margin-left:0}
+    .stamp{font-size:18px}
+    .bar nav{display:none}
+    .form{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none !important;transition:none !important}
+    .slot{opacity:1;transform:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <div class="logo"><i>A</i> Альфа-Бизнес</div>
+    <nav>
+      <a href="#day">Ваш день</a>
+      <a href="#money">Деньги</a>
+      <a href="#grow">Рост</a>
+    </nav>
+    <a class="btn btn-red btn-sm" href="#start">Открыть счёт</a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap grid">
+    <div>
+      <div class="eyebrow">для мастеров бьюти-сферы</div>
+      <h1>Счёт, который понимает, <em>как устроен ваш день</em></h1>
+      <p class="lead">Оплата с телефона без терминала, налог считается сам, а переводы от клиентов не приводят к блокировке.</p>
+      <div class="cta">
+        <a class="btn btn-red" href="#start">Открыть счёт бесплатно</a>
+        <a class="btn btn-line" href="#day">Как это работает</a>
+      </div>
+      <p class="fine">Онлайн за 5 минут. Подходит самозанятым и ИП.</p>
+    </div>
+
+    <div class="day" id="day">
+      <div class="day-h"><b>Вторник, 12 августа</b><span>7 записей</span></div>
+      <div class="slot" style="animation-delay:.05s"><time>09:30</time>
+        <div class="what">Маникюр, покрытие<small>Оплата по QR с телефона</small></div>
+        <div class="amt">2 400 ₽</div></div>
+      <div class="slot" style="animation-delay:.15s"><time>11:00</time>
+        <div class="what">Брови, коррекция<small>Оплата картой через AlfaPOS</small></div>
+        <div class="amt">1 800 ₽</div></div>
+      <div class="slot gap" style="animation-delay:.25s"><time>12:15</time>
+        <div class="what">Окно<small>Пришла предоплата на завтра</small></div>
+        <div class="amt">+1 000 ₽</div></div>
+      <div class="slot" style="animation-delay:.35s"><time>13:00</time>
+        <div class="what">Педикюр<small>Перевод от клиента</small></div>
+        <div class="amt">3 200 ₽</div></div>
+      <div class="slot" style="animation-delay:.45s"><time>16:30</time>
+        <div class="what">Наращивание<small>Оплата по QR с телефона</small></div>
+        <div class="amt">4 500 ₽</div></div>
+      <div class="slot gap" style="animation-delay:.55s"><time>19:10</time>
+        <div class="what">Закупка материалов<small>Оплата с бизнес-карты</small></div>
+        <div class="amt">−2 700 ₽</div></div>
+      <div class="day-f"><span>Заработано за день</span><b>10 200 ₽</b></div>
+    </div>
+  </div>
+</section>
+
+<div class="tape">
+  <div class="tape-in">
+    <span>маникюр</span><span>брови и ресницы</span><span>парикмахеры</span><span>косметология</span>
+    <span>массаж</span><span>эпиляция</span><span>визаж</span><span>ногтевой сервис</span>
+    <span>маникюр</span><span>брови и ресницы</span><span>парикмахеры</span><span>косметология</span>
+    <span>массаж</span><span>эпиляция</span><span>визаж</span><span>ногтевой сервис</span>
+  </div>
+</div>
+
+<section class="sec" id="money">
+  <div class="wrap">
+    <div class="sec-h">
+      <div class="stamp">09:30</div>
+      <div>
+        <h2>Клиент пришёл — деньги на счёте сразу</h2>
+        <p>Терминал не нужен. Принимайте оплату телефоном: клиент платит картой или по QR, деньги приходят на счёт в тот же день.</p>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <h3>AlfaPOS</h3>
+        <p>Приём карт прямо на смартфоне. Ничего покупать и арендовать не нужно.</p>
+        <div class="tag">Бесплатно</div>
+      </div>
+      <div class="card">
+        <h3>Оплата по QR</h3>
+        <p>Клиент сканирует код и платит через своё банковское приложение.</p>
+        <div class="tag">Комиссия ниже эквайринга</div>
+      </div>
+      <div class="card">
+        <h3>Предоплата за запись</h3>
+        <p>Ссылка на оплату в переписке — меньше пустых окон из-за неявок.</p>
+        <div class="tag">Ссылка в один клик</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap">
+    <div class="sec-h">
+      <div class="stamp">12:15</div>
+      <div>
+        <h2>Переводы от клиентов не должны заканчиваться блокировкой</h2>
+        <p>Регулярные поступления от десятков разных людей банки считают подозрительными. Мастера узнают об этом в тот момент, когда карта уже заблокирована.</p>
+      </div>
+    </div>
+    <div class="quotebox">
+      <b>Индикатор риска</b> ежедневно проверяет ваши операции по 115-ФЗ и показывает риск заранее — с объяснением, что именно выглядит подозрительно и что с этим сделать. Не постфактум, а до блокировки.
+    </div>
+    <div class="cards" style="margin-top:16px">
+      <div class="card">
+        <h3>Проверка клиента-компании</h3>
+        <p>Если салон или студия платит вам как юрлицо — проверьте, кому выставляете счёт.</p>
+        <div class="tag">Отчёт за минуту</div>
+      </div>
+      <div class="card">
+        <h3>Чеки самозанятого</h3>
+        <p>Чек формируется сам при поступлении оплаты, налог откладывается отдельно.</p>
+        <div class="tag">Без приложения «Мой налог»</div>
+      </div>
+      <div class="card accent">
+        <h3>Индикатор риска</h3>
+        <p>Ежедневный мониторинг и понятное объяснение причин. Работает и по переводам на карту.</p>
+        <div class="tag">995 ₽ в месяц</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="grow">
+  <div class="wrap">
+    <div class="sec-h">
+      <div class="stamp">вс</div>
+      <div>
+        <h2>Выходной, когда вы думаете о деньгах, а не о клиентах</h2>
+        <p>Второе кресло, аренда кабинета, новый аппарат, помощник. Это решения, которые принимают в воскресенье вечером — и обычно вслепую.</p>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <h3>Пульс рынка</h3>
+        <p>Как ваш средний чек и загрузка выглядят на фоне похожих мастеров в районе.</p>
+        <div class="tag">Первые 2 месяца бесплатно</div>
+      </div>
+      <div class="card">
+        <h3>Господдержка</h3>
+        <p>Агент сверяет ваш профиль с реестром программ и показывает те, под которые вы реально проходите.</p>
+        <div class="tag">Подбор за минуту</div>
+      </div>
+      <div class="card">
+        <h3>Деньги на оборудование</h3>
+        <p>Аппарат, кресло, ремонт кабинета — без залога и поручителей.</p>
+        <div class="tag">Решение в день заявки</div>
+      </div>
+      <div class="card">
+        <h3>Страховка на кабинет</h3>
+        <p>Залив, пожар, повреждение оборудования и ответственность перед клиентом.</p>
+        <div class="tag">Подбор по вашим операциям</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap">
+    <div class="sec-h">
+      <div class="stamp">итог</div>
+      <div><h2>Что вы получаете в первый день</h2></div>
+    </div>
+    <div class="price" style="margin-left:136px">
+      <div><b>0 ₽</b><span>обслуживание счёта на старте</span></div>
+      <div><b>5 минут</b><span>на открытие онлайн</span></div>
+      <div><b>Без визита</b><span>документы подписываются в приложении</span></div>
+      <div><b>Одно окно</b><span>оплата, налог, страховка, поддержка</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="final" id="start">
+  <div class="wrap">
+    <h2>Откройте счёт и работайте спокойно</h2>
+    <p>Оставьте контакты — перезвоним и поможем подобрать тариф под вашу загрузку. Открытие бесплатное, отказаться можно на любом шаге.</p>
+    <form class="form" onsubmit="event.preventDefault();done(this)">
+      <input required placeholder="Как вас зовут" aria-label="Имя">
+      <input required type="tel" placeholder="Телефон" aria-label="Телефон">
+      <select class="full" aria-label="Направление">
+        <option>Ногтевой сервис</option>
+        <option>Брови и ресницы</option>
+        <option>Волосы и парикмахерские услуги</option>
+        <option>Косметология и уход</option>
+        <option>Массаж и телесные практики</option>
+        <option>Другое направление</option>
+      </select>
+      <button class="btn btn-red" type="submit">Открыть счёт</button>
+    </form>
+    <p class="fine">Нажимая кнопку, вы соглашаетесь на обработку персональных данных.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Макет лендинга для кейс-чемпионата. Не является офертой.</span>
+    <span style="margin-left:auto">Альфа-Бизнес</span>
+  </div>
+</footer>
+
+<script>
+  function done(f){
+    f.innerHTML='<p style="grid-column:1/-1;font-family:Unbounded,sans-serif;font-size:19px">'
+      +'Заявка отправлена. Перезвоним в течение 15 минут.</p>';
+  }
+</script>
+</body>
+</html>

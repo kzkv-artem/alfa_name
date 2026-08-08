@@ -13,13 +13,14 @@ from dotenv import load_dotenv
 load_dotenv(PROJECT_ROOT / ".env")
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from alfa_agent.acquisition import RiskAdvisorAgent
 from alfa_agent.cashflow import DB_PATH as CASHFLOW_DB_PATH
 from alfa_agent.cashflow import CashflowAgent
 from alfa_agent.cashflow import connect as cashflow_connect
 from alfa_agent.cashflow import load_model, refresh_recurring_patterns, train_model
-from alfa_agent.cashflow.fixtures import seed_demo_client
+from alfa_agent.cashflow.fixtures import seed_demo_alert_client, seed_demo_client
 from alfa_agent.cashflow.ingest import load_transactions_csv
 from alfa_agent.cashflow.model import MODEL_PATH, save_model
 from alfa_agent.gov_support import DB_PATH as GOV_DB_PATH
@@ -30,7 +31,8 @@ from alfa_agent.insurance import InsuranceAdvisorAgent
 from alfa_agent.insurance import synthetic as insurance_synthetic
 from alfa_agent.llm import LLMClient
 
-from api.deps import LazyLLMClient
+from api.demo import is_demo_mode
+from api.deps import build_llm_client
 from api.errors import register_error_handlers
 from api.routers import acquisition, cashflow, gov_support, insurance
 
@@ -40,6 +42,7 @@ def _init_cashflow(llm_client: LLMClient) -> tuple[Path, object, CashflowAgent]:
     conn = cashflow_connect()
     seed_demo_client(conn)
     load_transactions_csv(conn)  # полная перезагрузка транзакций — только на старте!
+    seed_demo_alert_client(conn)  # второй демо-клиент, специально с разрывом (даты от today())
     refresh_recurring_patterns(conn)
     conn.execute("PRAGMA journal_mode=WAL")
     conn.close()
@@ -82,7 +85,7 @@ def _init_insurance(llm_client: LLMClient) -> tuple[dict, InsuranceAdvisorAgent]
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    llm_client = LazyLLMClient()
+    llm_client = build_llm_client()
 
     app.state.acquisition_agent = RiskAdvisorAgent(llm_client=llm_client)
 
@@ -113,5 +116,12 @@ app.include_router(insurance.router)
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+def health() -> dict[str, object]:
+    return {"status": "ok", "demo_mode": is_demo_mode()}
+
+
+# Монтировать статику нужно строго последней строкой: Mount("/") — это
+# catch-all по префиксу, и Starlette отдаёт запрос первому совпавшему
+# маршруту в порядке регистрации. Помести это выше — и оно перехватит вообще
+# все запросы (включая роутеры и /health) раньше, чем до них дойдёт очередь.
+app.mount("/", StaticFiles(directory=str(PROJECT_ROOT / "static"), html=True), name="static")

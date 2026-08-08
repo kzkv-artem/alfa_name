@@ -26,14 +26,21 @@ def run_forecast(conn: sqlite3.Connection, model: CatBoostClassifier, account_id
     business_age_months = (today.year - reg_date.year) * 12 + (today.month - reg_date.month)
     account_age_days = (today - date.fromisoformat(row["opening_date"])).days
 
-    since_30 = (today - timedelta(days=30)).isoformat()
-    since_10 = (today - timedelta(days=INCOME_LOOKBACK_DAYS)).isoformat()
-    df_30 = pd.read_sql(
-        "SELECT date, amount FROM payment_transaction WHERE account_id=? AND direction='inbound' AND date >= ?",
-        conn, params=(account_id, since_30))
-    df_10 = pd.read_sql(
-        "SELECT date, amount FROM payment_transaction WHERE account_id=? AND direction='inbound' AND date >= ?",
-        conn, params=(account_id, since_10))
+    # date хранится текстом как ДД.ММ.ГГГГ — сравнивать его со строкой вида
+    # today.isoformat() ("ГГГГ-ММ-ДД") прямо в SQL нельзя: это два разных
+    # текстовых формата, и `>=` в SQLite сравнивает их лексикографически, а не
+    # как даты. Тянем все inbound-транзакции без фильтра, приводим date к
+    # datetime тем же форматом, что уже использует patterns.py, и фильтруем
+    # окна здесь — сравнивая настоящие даты, а не их текстовые представления.
+    df_inbound = pd.read_sql(
+        "SELECT date, amount FROM payment_transaction WHERE account_id=? AND direction='inbound'",
+        conn, params=(account_id,))
+    df_inbound["date"] = pd.to_datetime(df_inbound["date"], format="%d.%m.%Y")
+
+    since_30 = pd.Timestamp(today - timedelta(days=30))
+    since_10 = pd.Timestamp(today - timedelta(days=INCOME_LOOKBACK_DAYS))
+    df_30 = df_inbound[df_inbound["date"] >= since_30]
+    df_10 = df_inbound[df_inbound["date"] >= since_10]
 
     avg_income_30 = df_30.groupby("date")["amount"].sum().mean() if not df_30.empty else 0
     avg_income_10 = df_10.groupby("date")["amount"].sum().mean() if not df_10.empty else 0
