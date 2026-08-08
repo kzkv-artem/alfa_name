@@ -86,6 +86,19 @@ def run_forecast(conn: sqlite3.Connection, model: CatBoostClassifier, account_id
     }
 
 
+def history_depth_days(conn: sqlite3.Connection, account_id: str) -> int | None:
+    """Глубина истории транзакций клиента — разница между датами первой и
+    последней операции по счёту. None, если операций нет вовсе."""
+    rows = pd.read_sql(
+        "SELECT date FROM payment_transaction WHERE account_id = ?",
+        conn, params=(account_id,),
+    )
+    if rows.empty:
+        return None
+    parsed = pd.to_datetime(rows["date"], format="%d.%m.%Y")
+    return int((parsed.max() - parsed.min()).days)
+
+
 def save_forecast(conn: sqlite3.Connection, account_id: str, forecast: dict) -> None:
     if forecast["gap_date"] is None:
         return

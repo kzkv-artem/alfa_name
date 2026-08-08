@@ -12,15 +12,19 @@ from alfa_agent.gov_support import GovSupportAgent
 from alfa_agent.insurance import ClientFeatures, InsuranceAdvisorAgent
 from alfa_agent.llm import LLMClient, get_client
 
-from api.demo import DemoLLMClient, is_demo_mode
+from api.demo import CachingLLMClient, DemoLLMClient, is_cache_enabled, is_demo_mode
 
 
 def build_llm_client() -> LLMClient:
-    """Что именно подставляется агентам в качестве LLMClient — единственное
-    решение, которое отличает DEMO_MODE от обычного запуска."""
+    """Что именно подставляется агентам в качестве LLMClient. DEMO_MODE и
+    LLM_CACHE взаимоисключающи по смыслу: в DEMO_MODE живых вызовов нет
+    вообще, кэшировать нечего."""
     if is_demo_mode():
         return DemoLLMClient()
-    return LazyLLMClient()
+    client: LLMClient = LazyLLMClient()
+    if is_cache_enabled():
+        client = CachingLLMClient(client)
+    return client
 
 
 class LazyLLMClient(LLMClient):
@@ -81,8 +85,11 @@ def get_insurance_agent(request: Request) -> InsuranceAdvisorAgent:
     return request.app.state.insurance_agent
 
 
-def get_gov_demo_client_id(request: Request) -> int:
-    return request.app.state.gov_demo_client_id
+def get_gov_client_id(request: Request, client_id: int | None = None) -> int:
+    """client_id — query-параметр эндпоинтов /gov_support/...; если не передан,
+    используется исходный демо-клиент из app.state (тот же дефолт, что был
+    раньше жёстко зашит в get_gov_demo_client_id)."""
+    return client_id if client_id is not None else request.app.state.gov_demo_client_id
 
 
 def get_insurance_features_index(request: Request) -> dict[str, ClientFeatures]:

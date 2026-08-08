@@ -5,7 +5,8 @@ import sqlite3
 from catboost import CatBoostClassifier
 from fastapi import APIRouter, Depends, HTTPException
 
-from alfa_agent.cashflow import CashflowAgent, run_forecast, save_forecast
+from alfa_agent.cashflow import CashflowAgent, history_depth_days, run_forecast, save_forecast
+from alfa_agent.cashflow.agent import MIN_CONFIDENCE_TO_ALERT
 
 from api.deps import get_cashflow_agent, get_cashflow_conn, get_cashflow_model
 from api.schemas.cashflow import CashflowDecisionOut, ClientOut, ExplainOut
@@ -40,7 +41,16 @@ def get_decision(
     forecast = run_forecast(conn, model, account["account_id"])
     save_forecast(conn, account["account_id"], forecast)
     decision = agent.run(conn, account["account_id"], client["full_name"])
-    return CashflowDecisionOut.model_validate(decision)
+    # confidence_level модель считает всегда (см. run_forecast), а
+    # CashflowDecision несёт его только в ветке alert=True — здесь берём
+    # значение напрямую из forecast, чтобы оно было в ответе в любом случае.
+    payload = {
+        **vars(decision),
+        "confidence_level": forecast["confidence_level"],
+        "history_depth_days": history_depth_days(conn, account["account_id"]),
+        "alert_threshold": MIN_CONFIDENCE_TO_ALERT,
+    }
+    return CashflowDecisionOut.model_validate(payload)
 
 
 @router.post("/clients/{client_id}/explain", response_model=ExplainOut)

@@ -12,6 +12,9 @@ venv/
 catboost_info/
 *.db
 
+# Кэш LLM-ответов — рантайм-артефакт, не куратируемый (в отличие от demo_fixtures.json)
+llm_cache.json
+
 # Прочее
 .DS_Store
 .ipynb_checkpoints/

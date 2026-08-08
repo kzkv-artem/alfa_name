@@ -10,6 +10,11 @@ class ProgramMatchOut(BaseModel):
     reason: str
 
 
+class ProgramMatchListOut(BaseModel):
+    eligible: list[ProgramMatchOut]
+    not_eligible: list[ProgramMatchOut]
+
+
 class ProgramAdviceOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+from datetime import date, timedelta
 
 DOCUMENT_TYPES = [
     "бизнес-план", "документ на помещение (аренда/собственность)",
@@ -55,3 +56,29 @@ def seed_demo_data(conn: sqlite3.Connection) -> tuple[int, dict[str, int]]:
         )
     conn.commit()
     return client_id, doc_type_ids
+
+
+# Тот же персонаж, что заведён в cashflow (seed_demo_beauty_client) и insurance
+# (demo_beauty_client_features) — ИП, студия маникюра, 2 года работы, Казань.
+# Комплект документов у неё беднее, чем у Дарьи, — только выписка по счёту,
+# специально, чтобы показать другую ветку decide() (request_documents, а не
+# сразу propose_draft) там, где документов не хватает больше двух.
+CLIENT_HAS_DOCS_BEAUTY = ["выписка по счёту"]
+
+
+def seed_demo_beauty_client(conn: sqlite3.Connection, doc_type_ids: dict[str, int]) -> int:
+    cur = conn.execute(
+        """INSERT INTO client (full_name, birth_date, entity_type, industry_code,
+                                business_registered_at, region_code)
+           VALUES (?,?,?,?,?,?)""",
+        ("Алина Гарифуллина", "1997-06-15", "ИП", "услуги маникюра и педикюра",
+         (date.today() - timedelta(days=730)).isoformat(), "Республика Татарстан"),
+    )
+    client_id = cur.lastrowid
+    for doc_name in CLIENT_HAS_DOCS_BEAUTY:
+        conn.execute(
+            "INSERT INTO client_document (client_id, document_type_id, status) VALUES (?,?,'verified')",
+            (client_id, doc_type_ids[doc_name]),
+        )
+    conn.commit()
+    return client_id

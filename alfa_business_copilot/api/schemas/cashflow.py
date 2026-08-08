@@ -21,6 +21,8 @@ class CashflowDecisionOut(BaseModel):
     gap_date: date | None = None
     gap_amount: float | None = None
     confidence_level: float | None = None
+    history_depth_days: int | None = None
+    alert_threshold: float
 
 
 class ExplainOut(BaseModel):

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import random
 import sqlite3
 from datetime import date, timedelta
 
@@ -64,6 +65,70 @@ def seed_demo_alert_client(conn: sqlite3.Connection) -> None:
     # скромный ежедневный приход за последние 35 дней
     for days_ago in range(35):
         add(days_ago, 2200 + (days_ago % 5) * 60, "inbound", "acquiring", 4)
+
+    conn.executemany(
+        "INSERT INTO payment_transaction VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        rows,
+    )
+    conn.commit()
+
+
+def seed_demo_beauty_client(conn: sqlite3.Connection) -> None:
+    """Третий демо-клиент — ИП, студия маникюра, 2 года работы, Казань
+    (тот же персонаж, что заведён в gov_support и insurance — см.
+    alfa_agent/gov_support/fixtures.py::seed_demo_beauty_client и
+    alfa_agent/insurance/fixtures.py::demo_beauty_client_features).
+
+    Профиль сделан правдоподобным, а не подогнанным под вердикт: ежедневная
+    выручка с реальным провалом в начале каждого календарного месяца (в эти
+    дни у клиентов студии меньше свободных денег — типичный паттерн для
+    бьюти-услуг), аренда и закупка материалов — крупные ежемесячные списания.
+
+    Даты аренды/закупки считаются от date.today() при каждом запуске (как в
+    seed_demo_alert_client), а не от фиксированного числа месяца: первая
+    версия сида привязывала их к 5-му/8-му числу и в день, когда оба уже
+    прошли в текущем месяце, оба платежа улетали за пределы 21-дневного окна
+    прогноза — эффект зависел от того, какое сегодня число. days_ago-привязка
+    устраняет эту зависимость: следующий ожидаемый платёж всегда попадает в
+    окно прогноза независимо от даты запуска. Какой именно вердикт выдаст
+    модель — не выбирается заранее; random.Random-seed фиксирован только ради
+    воспроизводимости прогона, а не ради конкретного результата."""
+    conn.execute(
+        "INSERT OR REPLACE INTO client VALUES (?, ?, ?, ?, ?)",
+        ("client_beauty", "Алина Гарифуллина", "1997-06-15", "Beauty", _days_ago_iso(730)),
+    )
+    conn.execute(
+        "INSERT OR REPLACE INTO account VALUES (?, ?, ?, ?)",
+        ("account_beauty", "client_beauty", _days_ago_iso(700), 35000),
+    )
+
+    rows = []
+
+    def add(days_ago: int, amount: float, direction: str, counterparty: str, category_id: int) -> None:
+        rows.append((
+            f"tx3_{len(rows) + 1}", "account_beauty", category_id, _days_ago(days_ago),
+            amount, direction, counterparty, "transfer",
+        ))
+
+    rnd = random.Random(20260808)  # только для воспроизводимости, не для нужного исхода
+
+    # Аренда студии — ~раз в 30 дней, последняя была 22 дня назад ->
+    # next_expected_date патттерна = today+8, надёжно внутри 21-дневного окна.
+    for i, days_ago in enumerate([22, 52, 82, 112]):
+        add(days_ago, round(36000 * rnd.uniform(0.97, 1.03)), "outbound", "ИП Хозяин (аренда студии)", 1)
+    # Закупка материалов — ~раз в 30 дней, последняя 15 дней назад ->
+    # next_expected_date = today+15, тоже внутри окна.
+    for i, days_ago in enumerate([15, 45, 75, 105]):
+        add(days_ago, round(22000 * rnd.uniform(0.95, 1.05)), "outbound", "OOO Beauty-Snab", 2)
+
+    # Ежедневная выручка за последние 65 дней: 1-5 число месяца — провал
+    # (после аренды и закупок у клиентов меньше свободных денег на маникюр).
+    for days_ago in range(65):
+        d = date.today() - timedelta(days=days_ago)
+        is_dip = d.day <= 5
+        visits = rnd.randint(2, 3) if is_dip else rnd.randint(5, 8)
+        avg_ticket = rnd.uniform(2600, 3400)
+        add(days_ago, round(visits * avg_ticket, 2), "inbound", "acquiring", 4)
 
     conn.executemany(
         "INSERT INTO payment_transaction VALUES (?, ?, ?, ?, ?, ?, ?, ?)",

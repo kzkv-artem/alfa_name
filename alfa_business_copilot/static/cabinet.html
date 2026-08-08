@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Альфа-Бизнес — макет v2</title>
+<style>
+  :root{
+    --red:#EF3124;--red-dark:#D42A1F;--ink:#0F0F0F;--ink-2:#404449;--muted:#8A9099;
+    --bg:#F2F3F5;--surface:#FFFFFF;--line:#E7E9EC;--line-2:#F0F1F3;--chip:#F2F3F5;
+    --radius:14px;--sidebar:242px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+  input,textarea{font:inherit;color:inherit}
+  ::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#D6D9DE;border-radius:4px}
+
+  .app{display:flex;min-height:100vh}
+  .sidebar{width:var(--sidebar);flex:0 0 var(--sidebar);background:var(--surface);
+    border-right:1px solid var(--line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+  .brand{display:flex;align-items:center;gap:9px;padding:18px 16px 14px}
+  .brand .mark{width:26px;height:26px;border-radius:8px;background:var(--red);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:14px}
+  .brand .name{font-weight:700;font-size:15px;letter-spacing:-.2px}
+  .nav{flex:1;overflow-y:auto;padding:4px 8px 8px}
+  .nav-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border-radius:10px;
+    color:var(--ink-2);font-size:13.5px;text-align:left;transition:background .12s}
+  .nav-item:hover{background:#F5F6F8}
+  .nav-item.active{background:#F5F6F8;color:var(--ink);font-weight:600}
+  .nav-item .ico{width:18px;flex:0 0 18px;opacity:.75;font-size:14px;text-align:center}
+  .badge-new{margin-left:auto;font-size:9px;font-weight:700;letter-spacing:.4px;background:#E8F0FE;
+    color:#1F5EDB;padding:2px 5px;border-radius:4px}
+  .badge-ai{margin-left:auto;font-size:9px;font-weight:700;letter-spacing:.4px;background:#EDE9FE;
+    color:#6D28D9;padding:2px 5px;border-radius:4px}
+  .nav-sep{height:1px;background:var(--line-2);margin:8px 10px}
+  .sidebar-foot{padding:10px 16px 14px;border-top:1px solid var(--line-2);color:var(--muted);font-size:12.5px}
+
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .topbar{height:56px;display:flex;align-items:center;gap:14px;padding:0 26px;background:var(--surface);
+    border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+  .search{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13.5px;margin-right:auto}
+  .segsw{display:flex;gap:3px;background:var(--chip);border-radius:10px;padding:3px}
+  .segsw button{padding:5px 11px;border-radius:8px;font-size:12.5px;color:var(--ink-2)}
+  .segsw button.on{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .icon-btn{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;color:var(--ink-2)}
+  .icon-btn:hover{background:#F5F6F8}
+  .org{display:flex;flex-direction:column;align-items:flex-end;line-height:1.25}
+  .org b{font-size:12.5px;font-weight:700}.org span{font-size:11.5px;color:var(--muted)}
+
+  .content{padding:26px 30px 90px;max-width:1180px}
+  h1{font-size:30px;letter-spacing:-.6px;font-weight:700;margin-bottom:6px}
+  .sub{color:var(--muted);margin-bottom:20px}
+  h2{font-size:18px;letter-spacing:-.3px;font-weight:700}
+
+  .card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--line)}
+  .btn{padding:9px 16px;border-radius:10px;font-size:13.5px;font-weight:600;transition:background .12s,border-color .12s}
+  .btn-primary{background:var(--red);color:#fff}.btn-primary:hover{background:var(--red-dark)}
+  .btn-ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+  .btn-ghost:hover{border-color:#CFD3D9}
+  .btn-sm{padding:6px 12px;font-size:12.5px;border-radius:8px}
+  .btn-block{width:100%;text-align:center}
+
+  .chip{background:var(--chip);border-radius:9px;padding:7px 13px;font-size:12.5px;color:var(--ink-2)}
+  .chip:hover{background:#E9EBEE}
+  .chip.on{background:#111;color:#fff}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:14px}
+  .svc{padding:16px;display:flex;flex-direction:column;gap:8px}
+  .svc .top{display:flex;align-items:flex-start;gap:10px}
+  .svc .nm{font-weight:600;font-size:14px;flex:1}
+  .svc .ds{font-size:12.5px;color:var(--muted);line-height:1.45;flex:1}
+  .svc .bt{display:flex;align-items:center;gap:10px;margin-top:4px}
+  .svc .pr{font-size:13px;font-weight:600;margin-right:auto}
+  .svc .pr small{font-weight:400;color:var(--muted);font-size:12px}
+
+  .st{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+    padding:4px 7px;border-radius:5px;white-space:nowrap}
+  .st-on{background:#E4F6EC;color:#0E7A55}
+  .st-tariff{background:#E8F0FE;color:#1F5EDB}
+  .st-off{background:#F0F1F3;color:#6B7280}
+  .st-auto{background:#FFF3DF;color:#A96A00}
+
+  .cat-h{font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin:26px 0 12px}
+  .cat-h:first-of-type{margin-top:0}
+
+  .row{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--line-2)}
+  .row:last-child{border-bottom:none}
+  .row .nm{font-weight:600;font-size:13.5px}
+  .row .ds{font-size:12px;color:var(--muted)}
+  .row .amt{margin-left:auto;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .sw{width:36px;height:21px;border-radius:11px;position:relative;flex:0 0 36px;transition:background .15s}
+  .sw span{position:absolute;top:2px;width:17px;height:17px;border-radius:50%;background:#fff;transition:.15s}
+  .sw.on{background:#0E7A55}.sw.on span{right:2px}
+  .sw.off{background:#D6D9DE}.sw.off span{left:2px}
+
+  .total{display:flex;align-items:center;gap:14px;padding:16px 18px;background:#FAFBFC;
+    border-top:1px solid var(--line);border-radius:0 0 var(--radius) var(--radius)}
+  .total b{margin-left:auto;font-size:19px;letter-spacing:-.3px}
+
+  .alert{display:flex;gap:11px;padding:14px 16px;border-radius:12px;margin-bottom:18px;font-size:13px;line-height:1.5}
+  .alert .mk{width:19px;height:19px;border-radius:50%;display:grid;place-items:center;font-size:11px;
+    font-weight:700;color:#fff;flex:0 0 19px;margin-top:1px}
+  .alert-warn{background:#FFF7E8;border:1px solid #FBE3B4}.alert-warn .mk{background:#E2A03F}
+  .alert-ai{background:#F5F2FF;border:1px solid #DDD5FA}.alert-ai .mk{background:#6D28D9}
+  .alert b{display:block;margin-bottom:2px}
+
+  .ai-box{padding:20px;margin-bottom:20px}
+  .ai-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .ai-dot{width:26px;height:26px;border-radius:8px;background:#6D28D9;color:#fff;display:grid;
+    place-items:center;font-size:12px;font-weight:700}
+  .ai-input{width:100%;background:#F4F5F7;border:none;border-radius:11px;padding:13px 15px;
+    font-size:14px;resize:none;margin:12px 0 12px;min-height:76px;outline:none}
+  .ai-input:focus{background:#EFF0F3}
+
+  .match{padding:16px 18px;margin-bottom:12px;display:flex;gap:16px;align-items:flex-start}
+  .match .pct{font-size:19px;font-weight:700;letter-spacing:-.4px;color:#0E7A55;min-width:52px}
+  .match .bd{flex:1}
+  .match .bd b{font-size:14px;display:block;margin-bottom:3px}
+  .match .bd p{font-size:12.5px;color:var(--muted);line-height:1.5}
+  .match .bd .why{font-size:12.5px;color:#6D28D9;margin-top:7px}
+
+  .empty{padding:52px 20px;text-align:center}
+  .empty .box{width:44px;height:44px;border-radius:12px;background:#F2F3F5;margin:0 auto 14px;
+    display:grid;place-items:center;font-size:18px}
+  .empty b{display:block;font-size:14px;margin-bottom:4px}
+  .empty p{color:var(--muted);font-size:13px;margin-bottom:16px}
+
+  table{width:100%;border-collapse:collapse}
+  thead th{text-align:left;font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);
+    font-weight:600;padding:12px 14px;border-bottom:1px solid var(--line-2);white-space:nowrap}
+  tbody td{padding:14px;border-bottom:1px solid var(--line-2);font-size:13px}
+  tbody tr:last-child td{border-bottom:none}
+  td.num{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  .fab{position:fixed;right:26px;bottom:26px;z-index:40;display:flex;flex-direction:column;
+    align-items:flex-end;gap:12px}
+  .fab-btn{width:52px;height:52px;border-radius:16px;background:#6D28D9;color:#fff;font-size:18px;
+    box-shadow:0 6px 20px rgba(109,40,217,.35);display:grid;place-items:center}
+  .panel{width:328px;background:var(--surface);border:1px solid var(--line);border-radius:16px;
+    box-shadow:0 12px 40px rgba(0,0,0,.14);overflow:hidden}
+  .panel .ph{padding:14px 16px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;gap:9px}
+  .panel .pb{padding:6px 8px 12px;max-height:320px;overflow-y:auto}
+  .sugg{display:block;width:100%;text-align:left;padding:11px 12px;border-radius:11px;font-size:13px;line-height:1.45}
+  .sugg:hover{background:#F5F6F8}
+  .sugg b{display:block;font-weight:600;margin-bottom:2px}
+  .sugg span{color:var(--muted);font-size:12px}
+  .hidden{display:none !important}
+
+  @media (max-width:900px){
+    .sidebar{display:none}.content{padding:18px 16px 90px}h1{font-size:24px}
+    .segsw{display:none}.fab{right:14px;bottom:14px}.panel{width:min(328px,calc(100vw - 28px))}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><div class="mark">A</div><div class="name">Альфа-Бизнес</div></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sidebar-foot">⚙ Настроить меню</div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="search">🔍 Поиск</div>
+      <div class="segsw" id="segsw">
+        <button data-s="self" onclick="setSeg('self')">Самозанятый</button>
+        <button data-s="ip" class="on" onclick="setSeg('ip')">ИП</button>
+        <button data-s="ooo" onclick="setSeg('ooo')">ООО</button>
+      </div>
+      <div class="segsw" id="stagesw">
+        <button data-st="first" class="on" onclick="setStage('first')">Первый бизнес</button>
+        <button data-st="active" onclick="setStage('active')">Уже работаю</button>
+      </div>
+      <button class="icon-btn">🔔</button>
+      <div class="org"><b id="org-name">ИП Соколова И. В.</b><span id="org-person">Соколова И. В.</span></div>
+    </header>
+
+    <div class="content">
+
+      <!-- ===== ВСЕ СЕРВИСЫ ===== -->
+      <section id="v-services">
+        <h1>Все сервисы</h1>
+        <p class="sub" id="svc-sub">Показываем то, что подходит вашему бизнесу</p>
+        <div class="chips" id="cat-chips"></div>
+        <div id="svc-list"></div>
+      </section>
+
+      <!-- ===== ПОДПИСКИ ===== -->
+      <section id="v-subs" class="hidden">
+        <h1>Мои подписки</h1>
+        <p class="sub">Всё, что списывается ежемесячно — в одном месте</p>
+        <div class="alert alert-warn">
+          <span class="mk">!</span>
+          <div><b>Две подписки подключились вместе с тарифом</b>
+          Они входят в условия тарифа и включились автоматически. Отключить можно здесь же.</div>
+        </div>
+        <div class="card"><div id="subs-list"></div>
+          <div class="total">Списывается ежемесячно <b id="subs-total">0 ₽</b></div>
+        </div>
+        <p style="color:var(--muted);font-size:12.5px;margin-top:12px">
+          Отключение вступает в силу со следующего расчётного периода</p>
+      </section>
+
+      <!-- ===== ГОСПОДДЕРЖКА ===== -->
+      <section id="v-support" class="hidden">
+        <h1>Господдержка</h1>
+        <p class="sub">Больше 400 программ. Агент найдёт те, под которые вы проходите</p>
+        <div class="card ai-box">
+          <div class="ai-head"><div class="ai-dot">ИИ</div><h2>Подбор программ</h2></div>
+          <p style="color:var(--muted);font-size:13px">Опишите бизнес своими словами — агент сверит с реестром программ и условиями отбора</p>
+          <textarea class="ai-input" id="sup-text">Студия маникюра, работаю 2 года, 4 мастера, хочу открыть второй зал и купить оборудование</textarea>
+          <div class="chips" id="sup-chips"></div>
+          <button class="btn btn-primary" onclick="runSupport()">Подобрать программы</button>
+        </div>
+        <div id="sup-out"></div>
+      </section>
+
+      <!-- ===== СТРАХОВАНИЕ ===== -->
+      <section id="v-insurance" class="hidden">
+        <h1>Страхование</h1>
+        <p class="sub">Агент оценивает риски по вашим операциям и подбирает покрытие</p>
+        <div class="alert alert-ai">
+          <span class="mk">ИИ</span>
+          <div><b>Нашли незакрытый риск</b>
+          По выписке видно аренду помещения и закупку оборудования, но полиса имущества нет.
+          Для вашей сферы это самый частый убыток.</div>
+        </div>
+        <div class="card ai-box">
+          <div class="ai-head"><div class="ai-dot">ИИ</div><h2>Подбор покрытия</h2></div>
+          <p style="color:var(--muted);font-size:13px">Отметьте, что для вас важно — остальное агент достроит по операциям на счёте</p>
+          <div class="chips" id="ins-chips" style="margin-top:14px"></div>
+          <button class="btn btn-primary" onclick="runIns()">Подобрать страховку</button>
+        </div>
+        <div id="ins-out"></div>
+      </section>
+
+      <!-- ===== КРЕДИТЫ ===== -->
+      <section id="v-credit" class="hidden">
+        <h1>Кредиты</h1>
+        <p class="sub" id="cr-sub">Доступные продукты и действующие договоры</p>
+        <div class="card" style="padding:16px 18px;margin-bottom:14px">
+          <div class="cat-h" style="margin:0 0 8px">Полнота данных для прогноза</div>
+          <div class="row" style="padding:9px 0"><div class="nm">Глубина истории транзакций</div><div class="amt" id="cr-dq-depth">—</div></div>
+          <div class="row" style="padding:9px 0"><div class="nm">Вероятность разрыва</div><div class="amt" id="cr-dq-confidence">—</div></div>
+          <p style="color:var(--muted);font-size:12.5px;margin-top:10px">Чем больше операций проходит через Альфу, тем точнее прогноз.</p>
+        </div>
+        <div class="alert alert-ai">
+          <span class="mk">ИИ</span>
+          <div><b id="cr-alert-title">Загрузка…</b><span id="cr-alert-body"></span></div>
+        </div>
+        <div class="card"><table>
+          <thead><tr><th>Продукт</th><th>№ договора</th><th style="text-align:right">Доступно</th><th style="text-align:right">Задолженность</th></tr></thead>
+          <tbody>
+            <tr><td>Возобновляемая кредитная линия</td><td>0CVI6L</td><td class="num">1 940 800,00 ₽</td><td class="num">2 744 034,72 ₽</td></tr>
+            <tr><td>Овердрафт</td><td>09S88L</td><td class="num">500 000,00 ₽</td><td class="num">0,00 ₽</td></tr>
+          </tbody></table></div>
+        <p style="color:var(--muted);font-size:12.5px;margin-top:14px">
+          Полный кредитный флоу — транши, ковенанты, отправка документов — в первой версии макета</p>
+      </section>
+
+      <!-- ===== ЗАГЛУШКА ===== -->
+      <section id="v-stub" class="hidden">
+        <h1 id="stub-title">Раздел</h1>
+        <div class="card empty"><div class="box">▤</div>
+          <b>В макете этот раздел не собран</b>
+          <p>Здесь показываем уровень 1 и уровень 3: ядро меню, каталог, подписки и ИИ-подбор</p>
+          <button class="btn btn-primary" onclick="go('services')">К каталогу сервисов</button></div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<div class="fab">
+  <div class="panel hidden" id="panel">
+    <div class="ph"><div class="ai-dot">ИИ</div><b style="flex:1">Нейроофис</b>
+      <button class="icon-btn" onclick="togglePanel()">✕</button></div>
+    <div class="pb" id="panel-body"></div>
+  </div>
+  <button class="fab-btn" onclick="togglePanel()">✦</button>
+</div>
+
+<script>
+const MENUS = {
+  self:{org:'Ирина Соколова',person:'Самозанятая',items:[
+    ['money','◎','Деньги','stub'],['checks','▤','Чеки и налог','stub'],['clients','⚇','Клиенты','stub'],
+    ['sep'],
+    ['ins','⛨','Страхование','insurance','ai'],['sup','★','Господдержка','support','ai'],
+    ['sep'],
+    ['svc','▦','Все сервисы','services'],['subs','♺','Мои подписки','subs']]},
+  ip:{org:'ИП Соколова И. В.',person:'Соколова И. В.',items:[
+    ['pay','＋','Счета и платежи','stub'],['stmt','▤','Выписка','stub'],['cards','▭','Карты','stub'],
+    ['cred','％','Кредиты','credit'],
+    ['sep'],
+    ['ins','⛨','Страхование','insurance','ai'],['sup','★','Господдержка','support','ai'],
+    ['sep'],
+    ['svc','▦','Все сервисы','services'],['subs','♺','Мои подписки','subs']]},
+  ooo:{org:'ООО «ФИНМАРКЕТ»',person:'Дьяков М. Х.',items:[
+    ['pay','＋','Счета и платежи','stub'],['stmt','▤','Выписка','stub'],
+    ['contr','⚇','Контрагенты','stub'],['cred','％','Кредиты','credit'],
+    ['sal','▧','Зарплатный проект','stub'],
+    ['sep'],
+    ['ins','⛨','Страхование','insurance','ai'],['sup','★','Господдержка','support','ai'],
+    ['sep'],
+    ['svc','▦','Все сервисы','services'],['subs','♺','Мои подписки','subs']]}
+};
+
+const CATS = ['Деньги и расчёты','Продажи и клиенты','Учёт и налоги','Безопасность','Финансирование','ВЭД','Люди','Развитие'];
+// Вторая ось (независимая от сегмента): каталог для «Первого бизнеса»
+// сокращается до этих двух категорий — самое необходимое на старте.
+const BASIC_CATEGORIES = ['Деньги и расчёты','Учёт и налоги'];
+
+const SERVICES = [
+  ['Эквайринг','Деньги и расчёты','Приём карт и СБП в зале и онлайн','от 1,2% с оборота','off',['ip','ooo','self']],
+  ['AlfaPOS','Деньги и расчёты','Приём оплаты прямо на смартфоне, без терминала','Бесплатно','on',['self','ip','ooo']],
+  ['AlfaCASH','Деньги и расчёты','Работа с выручкой и сменами в приложении','Бесплатно','off',['ip','ooo']],
+  ['Самоинкассация','Деньги и расчёты','Внесение наличных через банкомат на счёт','По тарифу','off',['ip','ooo']],
+  ['Alfa API','Деньги и расчёты','Подключение платежей к вашей системе','Бесплатно','off',['ooo']],
+
+  ['Альфа-Таргет','Продажи и клиенты','Площадка для поиска заказчиков и подрядчиков','Базово бесплатно','on',['self','ip','ooo']],
+  ['Пульс рынка','Продажи и клиенты','Сравнение с конкурентами по обороту и среднему чеку','1 525 ₽/мес · 2 мес бесплатно','off',['ip','ooo']],
+  ['Пульс рынка','Продажи и клиенты','Как ваш средний чек и загрузка выглядят на фоне похожих мастеров в районе','1 525 ₽/мес · 2 мес бесплатно','off',['self']],
+  ['Альфа-Селлер','Продажи и клиенты','Счёт, аналитика и закупки для маркетплейсов','Бесплатно','off',['ip','ooo']],
+  ['Альфа-Логист','Продажи и клиенты','Более 200 перевозчиков в одном окне','Бесплатно','off',['ip','ooo']],
+  ['Альфа-Цели','Продажи и клиенты','Цели по обороту и платежам, призы за достижения','Бесплатно','off',['self','ip','ooo']],
+
+  ['Альфа-Бухгалтерия','Учёт и налоги','Расчёт налогов и сдача отчётности','1 220 ₽/мес','tariff',['ip','ooo']],
+  ['Налог для самозанятых','Учёт и налоги','Чеки, начисление и уплата НПД','Бесплатно','on',['self']],
+  ['Нейроофис','Учёт и налоги','ИИ-агенты берут на себя рутину: документы, письма, задачи','1 403 ₽/мес','off',['self','ip','ooo']],
+  ['Альфа-Диск','Учёт и налоги','Хранилище для документов бизнеса','В Альфа-Безопасности','off',['ip','ooo']],
+
+  ['Альфа-Безопасность','Безопасность','Проверки контрагентов и сотрудников, защита бренда, юрист','702 ₽/мес','auto',['ip','ooo']],
+  ['Индикатор риска','Безопасность','Ежедневный мониторинг по 115-ФЗ и риск блокировки счёта','995 ₽/мес','auto',['ip','ooo']],
+  ['Индикатор риска','Безопасность','Переводы от клиентов на карту — частая причина блокировки. Показываем риск заранее','995 ₽/мес','off',['self']],
+  ['Проверка контрагентов','Безопасность','Отчёт о надёжности перед сделкой','650 ₽ за отчёт','off',['self','ip','ooo']],
+  ['Проверка сотрудников','Безопасность','До 50 отчётов по сотрудникам в год','Годовая подписка','off',['ooo']],
+
+  ['Кредитная линия','Финансирование','Деньги траншами по мере необходимости','Ставка по заявке','on',['ip','ooo']],
+  ['Овердрафт','Финансирование','Платежи, даже если на счёте ноль','До 30 млн ₽','on',['ip','ooo']],
+  ['Микрокредит','Финансирование','Небольшая сумма без залога и поручителей','Ставка по заявке','off',['self']],
+  ['Лизинг','Финансирование','Техника и транспорт без залога','До 500 млн ₽','off',['ip','ooo']],
+  ['Факторинг','Финансирование','Деньги по отгрузке, не дожидаясь оплаты','По договору','off',['ooo']],
+  ['Банковские гарантии','Финансирование','Контрактные, налоговые и таможенные','По договору','off',['ooo']],
+  ['Депозиты','Финансирование','Размещение свободных остатков','Ставка по сроку','off',['ip','ooo']],
+
+  ['Валютный контроль','ВЭД','Постановка контрактов на учёт и сопровождение','По тарифу','off',['ip','ooo']],
+  ['Закупки из-за рубежа','ВЭД','Поиск поставщика, оплата и доставка под ключ','3–10% от суммы','off',['ip','ooo']],
+
+  ['Зарплатный проект','Люди','Ведомости, карты сотрудников, интеграция с 1С','Бесплатно','on',['ooo']],
+  ['Альфа-Командировки','Люди','Билеты, отели и отчётность по поездкам','По тарифу','off',['ooo']],
+
+  ['Альфа-Курс','Развитие','Курсы и вебинары для предпринимателей','Бесплатно','on',['self','ip','ooo']],
+  ['Курс+','Развитие','80+ курсов, кейсы и разборы от экспертов банка','990 ₽/мес','off',['self','ip','ooo']],
+  ['Альфа-Про','Развитие','Пакет сервисов одной подпиской','Пакетная цена','off',['ip','ooo']]
+];
+
+const SUBS = [
+  ['Альфа-Безопасность','Подключилась вместе с тарифом',702,true,true],
+  ['Индикатор риска','Подключилась вместе с тарифом',995,true,true],
+  ['Альфа-Бухгалтерия','Подключили вручную 12.03.2026',1220,true,false],
+  ['Нейроофис','Подключили вручную 02.06.2026',1403,true,false],
+  ['Курс+','Подключили вручную 18.05.2026',990,false,false]
+];
+
+const SUP_CHIPS=['Бьюти','Креативные индустрии','Общепит','Ритейл','IT','Производство'];
+const INS_CHIPS=['Помещение и ремонт','Оборудование','Ответственность перед клиентом','Сотрудники','Перерыв в работе','Груз'];
+
+// Один session_id на загрузку страницы, шлём его в каждом запросе к API
+// (заголовком — сами эндпоинты сегодня его не читают, кроме
+// /acquisition/messages, которого в этом макете пока нет).
+const SESSION_ID = crypto.randomUUID();
+
+// client_id Алины Гарифуллиной в gov_support — второй клиент, сеется в
+// api/main.py::_init_gov_support сразу после Дарьи (seed_demo_data,
+// автоинкремент=1), поэтому у неё стабильно client_id=2 при каждом чистом
+// старте сервера. Без отдельного /gov_support/clients с именами это то же
+// самое допущение, что и client_id="client_beauty"/"demo_beauty" в
+// cashflow/insurance ниже — просто здесь id числовой, а не строковый.
+const GOV_BEAUTY_CLIENT_ID = 2;
+
+async function apiFetch(path, {method='GET', body}={}){
+  const res = await fetch(path, {
+    method,
+    headers:{'Content-Type':'application/json','X-Session-Id':SESSION_ID},
+    body: body!==undefined ? JSON.stringify(body) : undefined
+  });
+  let data=null;
+  try{ data = await res.json() }catch(e){}
+  if(!res.ok){
+    const err = new Error((data&&(data.message||data.detail)) || `HTTP ${res.status}`);
+    err.status = res.status;
+    err.code = data && data.error; // llm_config_error | llm_unavailable | llm_response_error | llm_error | undefined
+    throw err;
+  }
+  return data;
+}
+
+function apiErrorHTML(err){
+  if(err && err.code==='llm_unavailable')
+    return `<div class="alert alert-warn"><span class="mk">!</span><div><b>ИИ временно недоступен</b>Провайдер модели не отвечает — похоже, исчерпан дневной лимит бесплатного тарифа. Попробуйте ещё раз чуть позже.</div></div>`;
+  if(err && err.code==='llm_config_error')
+    return `<div class="alert alert-warn"><span class="mk">!</span><div><b>ИИ не настроен</b>На сервере не задан ключ доступа к модели.</div></div>`;
+  return `<div class="alert alert-warn"><span class="mk">!</span><div><b>Не получилось загрузить</b>${(err&&err.message)||'Сервис недоступен'}</div></div>`;
+}
+
+function formatDateRu(iso){
+  const [y,m,d]=iso.split('-');
+  const months=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  return `${parseInt(d,10)} ${months[parseInt(m,10)-1]}`;
+}
+
+// Зеркалит alfa_agent/insurance/agent.py::REASON_TEXT — API отдаёт только
+// коды (reason_codes), человекочитаемый текст к ним есть только на бэкенде,
+// в промпте для LLM, наружу не возвращается. Держать в синхроне вручную.
+const REASON_TEXT_RU = {
+  HAS_RENT:'у вас регулярные платежи за аренду', HAS_PREMISES:'у вас есть помещение',
+  OWNS_EQUIPMENT:'у вас есть дорогое оборудование', HIGH_EQUIPMENT_SPEND:'вы вложились в оборудование на крупную сумму',
+  EQUIPMENT_HEAVY:'оборудование — существенная доля ваших расходов', RECENT_PURCHASE:'оборудование куплено совсем недавно',
+  FOOT_TRAFFIC:'через вас проходит много клиентов', SERVICE_ON_CLIENT:'вы оказываете услуги, связанные с телом клиента',
+  HAS_STAFF:'у вас есть штат сотрудников', IT_SPEND:'вы тратите на IT, хостинг и подписки',
+  ONLINE_REVENUE:'заметная доля выручки идёт через интернет', ALREADY_INSURED:'у вас уже есть похожая страховка',
+  RENEWAL_WINDOW:'срок вашей прошлой страховки подходит к концу',
+};
+
+let seg='ip', stage='first', cat='Все', catOpen='Все';
+
+// Вторая ось — этап бизнеса, независим от сегмента (self/ip/ooo), меняет
+// только порядок/состав меню и подсказок, сам список сегментов не трогает.
+// «Кредиты»/«Пульс рынка» для «первого бизнеса» не поднимаются искусственно
+// туда, где их и так нет (например, у self нет пункта «Кредиты» вообще) —
+// byKey просто не находит такой пункт и пропускает его.
+const STAGE_PRIORITY = { first:['sup','edu'], active:['cred','pulse'] };
+// Пункты, которых нет в MENUS ни у одного сегмента, но которые должна уметь
+// поднять вторая ось — ведут на общую заглушку 'stub', как и другие ещё не
+// собранные разделы (см. секцию v-stub).
+const EXTRA_NAV_ITEMS = {
+  edu: ['edu','✎','Обучение','stub'],
+  pulse: ['pulse','∿','Пульс рынка','stub'],
+};
+
+function orderedItems(seg, stage){
+  const all = MENUS[seg].items.filter(it=>it[0]!=='sep');
+  const priority = STAGE_PRIORITY[stage] || [];
+  const byKey = k => all.find(it=>it[0]===k) || EXTRA_NAV_ITEMS[k];
+  const top = priority.map(byKey).filter(Boolean);
+  const topKeys = new Set(top.map(it=>it[0]));
+  const rest = all.filter(it=>!topKeys.has(it[0]));
+  return top.length ? [...top, ['sep'], ...rest] : rest;
+}
+
+function renderNav(){
+  const m=MENUS[seg];
+  document.getElementById('org-name').textContent=m.org;
+  document.getElementById('org-person').textContent=m.person;
+  document.getElementById('nav').innerHTML=orderedItems(seg,stage).map(it=>{
+    if(it[0]==='sep') return '<div class="nav-sep"></div>';
+    const badge = it[4]==='ai' ? '<span class="badge-ai">ИИ</span>' : '';
+    return `<button class="nav-item" data-v="${it[3]}" data-label="${it[2]}" onclick="go('${it[3]}','${it[2]}')">
+      <span class="ico">${it[1]}</span>${it[2]}${badge}</button>`;
+  }).join('');
+  markNav(current);
+}
+
+function renderChips(){
+  const baseCats = stage==='first' ? BASIC_CATEGORIES : CATS;
+  const list=['Все',...baseCats];
+  document.getElementById('cat-chips').innerHTML=list.map(c=>
+    `<button class="chip ${c===cat?'on':''}" onclick="setCat('${c}')">${c}</button>`).join('');
+}
+function setCat(c){cat=c;renderChips();renderServices()}
+
+function renderServices(){
+  const stageOk = s => stage!=='first' || BASIC_CATEGORIES.includes(s[1]);
+  const av=SERVICES.filter(s=>s[5].includes(seg)&&stageOk(s)&&(cat==='Все'||s[1]===cat));
+  const labels={on:['Подключено','st-on'],tariff:['Входит в тариф','st-tariff'],
+                auto:['Подключено с тарифом','st-auto'],off:['','st-off']};
+  let html='';
+  const cats = (cat==='Все' ? CATS : [cat]).filter(c=>stage!=='first' || BASIC_CATEGORIES.includes(c));
+  cats.forEach(c=>{
+    const items=av.filter(s=>s[1]===c);
+    if(!items.length) return;
+    html+=`<div class="cat-h">${c}</div><div class="grid">`;
+    items.forEach(s=>{
+      const [txt,cls]=labels[s[4]];
+      html+=`<div class="card svc">
+        <div class="top"><div class="nm">${s[0]}</div>${txt?`<span class="st ${cls}">${txt}</span>`:''}</div>
+        <div class="ds">${s[2]}</div>
+        <div class="bt"><span class="pr">${s[3]}</span>
+        ${s[4]==='off'?'<button class="btn btn-ghost btn-sm">Подключить</button>':
+          '<button class="btn btn-ghost btn-sm">Открыть</button>'}</div></div>`;
+    });
+    html+='</div>';
+  });
+  const total=SERVICES.filter(s=>s[5].includes(seg)&&stageOk(s)).length;
+  document.getElementById('svc-sub').textContent = stage==='first'
+    ? `Для начала — ${total} базовых сервисов. Остальные откроются, когда бизнес заработает`
+    : `Показываем ${total} сервисов, подходящих вашему бизнесу. Всего в банке больше 60`;
+  document.getElementById('svc-list').innerHTML=html||'<div class="card empty"><div class="box">▤</div><b>В этой категории пока пусто</b><p>Для вашего сегмента здесь ничего нет</p></div>';
+}
+
+let subState=SUBS.map(s=>s[3]);
+function renderSubs(){
+  document.getElementById('subs-list').innerHTML=SUBS.map((s,i)=>`
+    <div class="row">
+      <div><div class="nm">${s[0]}</div><div class="ds">${s[1]}</div></div>
+      ${s[4]?'<span class="st st-auto">С тарифом</span>':''}
+      <div class="amt">${s[2].toLocaleString('ru-RU')} ₽/мес</div>
+      <button class="sw ${subState[i]?'on':'off'}" onclick="toggleSub(${i})"><span></span></button>
+    </div>`).join('');
+  const t=SUBS.reduce((a,s,i)=>a+(subState[i]?s[2]:0),0);
+  document.getElementById('subs-total').textContent=t.toLocaleString('ru-RU')+' ₽';
+}
+function toggleSub(i){subState[i]=!subState[i];renderSubs()}
+
+function renderPickers(){
+  document.getElementById('sup-chips').innerHTML=SUP_CHIPS.map((c,i)=>
+    `<button class="chip ${i===0?'on':''}" onclick="pick(this)">${c}</button>`).join('');
+  document.getElementById('ins-chips').innerHTML=INS_CHIPS.map((c,i)=>
+    `<button class="chip ${i<2?'on':''}" onclick="pick(this,1)">${c}</button>`).join('');
+}
+function pick(el,multi){
+  if(multi) el.classList.toggle('on');
+  else{el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));el.classList.add('on')}
+}
+
+// r = [pct, name, desc, why, extra?]. extra.urgency — для страховки ('high'/'normal'),
+// extra.missing — для господдержки (список недостающих документов, необязательный,
+// показываем строкой только если непустой). Классы — только уже существующие
+// (.st/.st-auto/.st-off — тот же бейдж, что и в статусах сервисов).
+function cardsFor(rows){
+  return rows.map(r=>{
+    const [pct,name,desc,why,extra={}] = r;
+    const urgencyBadge = extra.urgency
+      ? `<span class="st ${extra.urgency==='high'?'st-auto':'st-off'}">Срочность: ${extra.urgency==='high'?'повышенная':'обычная'}</span>`
+      : '';
+    const missingLine = (extra.missing && extra.missing.length)
+      ? `<p style="margin-top:6px">Для подачи не хватает: ${extra.missing.join(', ')}</p>`
+      : '';
+    return `<div class="card match">
+      <div class="pct">${pct}</div>
+      <div class="bd"><b>${name}</b>${urgencyBadge}<p>${desc}</p><div class="why">✦ ${why}</div>${missingLine}</div>
+      <button class="btn btn-ghost btn-sm">Подробнее</button></div>`;
+  }).join('');
+}
+// Строка на не подошедшую программу — переиспользует .row (тот же класс,
+// что у списка подписок), заворачиваем в нативный <details> — сворачиваемый
+// блок без единой строчки собственного JS-тоггла и новых классов.
+function notEligibleHTML(rows){
+  if(!rows.length) return '';
+  const items = rows.map(p=>`
+    <div class="row"><div><div class="nm">${p.program_name}</div><div class="ds">${p.reason}</div></div></div>
+  `).join('');
+  return `<details style="margin-top:10px">
+    <summary style="cursor:pointer;font-size:12.5px;color:var(--muted);padding:10px 2px">Не подошли: ${rows.length}</summary>
+    <div class="card" style="margin-top:8px">${items}</div>
+  </details>`;
+}
+
+// GET /gov_support/programs не даёт числового процента совпадения — только
+// is_eligible (bool). В .pct подставляем "Подходит" вместо выдуманного %.
+// .why берём из /advice (LLM-обоснование), p — из reason (детерминированная
+// причина, есть уже в /programs). Чтобы не заказывать LLM-объяснение сразу
+// для всех подходящих программ (их может быть больше десятка), берём первые 3
+// в карточки, остальные подходящие и все не подошедшие — не считая LLM.
+async function runSupport(){
+  const o=document.getElementById('sup-out');
+  o.innerHTML='<div class="cat-h">Агент проверяет условия отбора…</div>';
+
+  let data;
+  try{ data = await apiFetch(`/gov_support/programs?client_id=${GOV_BEAUTY_CLIENT_ID}`) }
+  catch(err){ o.innerHTML = apiErrorHTML(err); return }
+
+  const {eligible, not_eligible} = data;
+  if(!eligible.length){
+    o.innerHTML = `<div class="card empty"><div class="box">▤</div><b>Подходящих программ не нашлось</b>`
+      + `<p>Ни одна из ${eligible.length + not_eligible.length} проверенных программ не подошла по текущим критериям</p></div>`
+      + notEligibleHTML(not_eligible);
+    return;
+  }
+
+  const shortlist = eligible.slice(0,3);
+  const settled = await Promise.allSettled(
+    shortlist.map(p=>apiFetch(`/gov_support/programs/${p.program_id}/advice?client_id=${GOV_BEAUTY_CLIENT_ID}`))
+  );
+  const rows = settled.map((res,i)=>{
+    const p = shortlist[i];
+    const why = res.status==='fulfilled'
+      ? res.value.explanation
+      : (res.reason && res.reason.code==='llm_unavailable'
+          ? 'ИИ временно недоступен — обоснование не загрузилось'
+          : 'Не удалось загрузить обоснование');
+    const missing = res.status==='fulfilled' ? res.value.missing_documents : [];
+    return ['Подходит', p.program_name, p.reason, why, {missing}];
+  });
+  o.innerHTML = `<div class="cat-h">Подошли ${eligible.length} из ${eligible.length + not_eligible.length} программ</div>`
+    + cardsFor(rows) + notEligibleHTML(not_eligible);
+}
+
+// GET /insurance/clients/{id}/recommendation — need_score (0..1) это
+// настоящий процент совпадения, в отличие от господдержки. reason_codes —
+// машинные коды, переводим через REASON_TEXT_RU. reply может быть null —
+// это валидный результат («агент промолчал»), не ошибка.
+async function runIns(){
+  const o=document.getElementById('ins-out');
+  o.innerHTML='<div class="cat-h">Агент сверяет операции по счёту…</div>';
+
+  let clients;
+  try{ clients = await apiFetch('/insurance/clients') }
+  catch(err){ o.innerHTML = apiErrorHTML(err); return }
+
+  const target = clients.find(c=>c.legal_form!=='самозанятый') || clients[0];
+  if(!target){ o.innerHTML='<div class="card empty"><div class="box">⛨</div><b>Нет данных о клиентах</b></div>'; return }
+
+  let data;
+  try{ data = await apiFetch(`/insurance/clients/${target.client_id}/recommendation`) }
+  catch(err){ o.innerHTML = apiErrorHTML(err); return }
+
+  if(data.reply===null){
+    o.innerHTML = `<div class="card empty"><div class="box">⛨</div><b>Подходящих продуктов не нашлось</b>`
+      + `<p>${data.assessment.no_offer_reason || 'Агент не увидел рисков, которые стоит закрывать прямо сейчас'}</p></div>`;
+    return;
+  }
+
+  const rows = data.assessment.recommendations.map(r=>[
+    Math.round(r.need_score*100)+'%',
+    r.product.client_name,
+    r.product.protects_against,
+    r.reason_codes.map(c=>REASON_TEXT_RU[c]||c).join('; '),
+    {urgency: data.assessment.urgency},
+  ]);
+  o.innerHTML = `<div class="cat-h">Рекомендуем ${rows.length} покрыти${rows.length===1?'е':'я'}</div>` + cardsFor(rows);
+}
+
+// GET /cashflow/clients/client_1/decision. gap_date/gap_amount/recommended_product —
+// детерминированные поля (CatBoost + naive-прогноз), но если alert=true, сам
+// эндпоинт всё равно попутно зовёт LLM за текстом message — и может вернуть
+// 503 llm_unavailable, даже если нам нужны только эти три поля.
+async function loadCredit(){
+  const title=document.getElementById('cr-alert-title');
+  const body=document.getElementById('cr-alert-body');
+  const dqDepth=document.getElementById('cr-dq-depth');
+  const dqConfidence=document.getElementById('cr-dq-confidence');
+  title.textContent='Считаем прогноз по счёту…';
+  body.textContent='';
+  dqDepth.textContent='—';
+  dqConfidence.textContent='—';
+
+  let d;
+  try{ d = await apiFetch('/cashflow/clients/client_1/decision') }
+  catch(err){
+    title.textContent = err && err.code==='llm_unavailable' ? 'ИИ временно недоступен' : 'Не получилось загрузить прогноз';
+    body.textContent = (err && err.message) || '';
+    return;
+  }
+
+  // Оба поля — из того же ответа, второй запрос не нужен. history_depth_days
+  // считается на бэкенде как разница между первой и последней транзакцией
+  // клиента. confidence_level — это вероятность разрыва (predict_proba
+  // модели на событие gap_within_21d), не «точность» в смысле метрики
+  // качества — такой метрики у нас нет, поэтому и не показываем её отдельно.
+  // Порог "высокая" — alert_threshold из ответа (зеркалит
+  // alfa_agent/cashflow/agent.py::MIN_CONFIDENCE_TO_ALERT), не захардкожен.
+  dqDepth.textContent = d.history_depth_days!=null ? `${d.history_depth_days} дн.` : 'нет данных';
+  if(d.confidence_level!=null){
+    const pct = Math.round(d.confidence_level*100);
+    const label = d.confidence_level===0 ? 'разрыв не прогнозируется'
+      : d.confidence_level>=d.alert_threshold ? 'высокая'
+      : 'умеренная';
+    dqConfidence.textContent = `${pct}% — ${label}`;
+  } else {
+    dqConfidence.textContent = 'нет данных';
+  }
+
+  if(!d.alert){
+    title.textContent='Кассовых разрывов не ожидается';
+    body.textContent='Прогноз на ближайшие 21 день не показывает нехватки средств.';
+    return;
+  }
+
+  const amount = Math.abs(d.gap_amount).toLocaleString('ru-RU',{maximumFractionDigits:0});
+  title.textContent = `Возможен кассовый разрыв ${formatDateRu(d.gap_date)} — не хватит ≈${amount} ₽`;
+
+  const severityRu = {high:'высокая', medium:'средняя'}[d.severity] || d.severity || '—';
+  const confidencePct = d.confidence_level!=null ? Math.round(d.confidence_level*100)+'%' : '—';
+  const recText = d.recommended_product
+    ? `Рекомендуем: ${d.recommended_product}. `
+    : 'Рекомендуем заранее проверить график платежей. ';
+  body.innerHTML = recText
+    + `<span class="st ${d.severity==='high'?'st-auto':'st-tariff'}">Серьёзность: ${severityRu}</span> `
+    + `Уверенность модели: ${confidencePct}.`;
+}
+
+// Подсказки тоже зависят от второй оси: "active" — про обороты и лимиты
+// (прежнее содержимое PANEL), "first" — про открытие и первые шаги.
+const PANEL={
+  active:{
+    self:[['Отложить на налог','По вашим чекам за июль — 18 400 ₽'],
+          ['Есть подходящая субсидия','Для самозанятых в вашем регионе'],
+          ['Клиент платит второй месяц подряд','Предложите абонемент']],
+    ip:[['Оборот вырос на 22%','Можно увеличить лимит овердрафта'],
+        ['Три платежа новому контрагенту','Проверить перед следующим переводом'],
+        ['Помещение не застраховано','Подобрать покрытие']],
+    ooo:[['Подходите под программу 1764','Ставка ниже рыночной на оборудование'],
+         ['Две подписки подключились с тарифом','Посмотреть, что списывается'],
+         ['Приближается срок по ковенанту','Отчёт о продажах до 28.05']],
+  },
+  first:{
+    self:[['Как оформить самозанятость','Регистрация в «Мой налог» за 5 минут'],
+          ['Есть подходящая субсидия','Для тех, кто только начинает'],
+          ['Курс по деньгам для старта','Бесплатно в Альфа-Курс']],
+    ip:[['Как открыть ИП','Пошагово, с документами и сроками'],
+        ['Подберём господдержку для старта','Гранты и льготные кредиты на открытие'],
+        ['С чего начать учёт','Базовый пакет отчётности на первый год']],
+    ooo:[['Как зарегистрировать ООО','Устав, учредители, уставный капитал'],
+         ['Подберём господдержку для старта','Гранты и льготные кредиты на открытие'],
+         ['Открыть счёт для нового бизнеса','Онлайн, без визита в офис']],
+  },
+};
+function renderPanel(){
+  document.getElementById('panel-body').innerHTML=PANEL[stage][seg].map(s=>
+    `<button class="sugg"><b>${s[0]}</b><span>${s[1]}</span></button>`).join('');
+}
+function togglePanel(){document.getElementById('panel').classList.toggle('hidden')}
+
+const VIEWS=['services','subs','support','insurance','credit','stub'];
+let current='services';
+function go(v,label){
+  current=v;
+  VIEWS.forEach(x=>document.getElementById('v-'+x).classList.toggle('hidden',x!==v));
+  if(v==='stub') document.getElementById('stub-title').textContent=label||'Раздел';
+  if(v==='subs') renderSubs();
+  if(v==='credit') loadCredit();
+  markNav(v,label);
+  window.scrollTo({top:0});
+}
+function markNav(v,label){
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    const hit = n.dataset.v===v && (v!=='stub' || !label || n.dataset.label===label);
+    n.classList.toggle('active',hit);
+  });
+}
+function setSeg(s){
+  seg=s;
+  document.querySelectorAll('#segsw button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));
+  renderNav();renderServices();renderPanel();
+  if(!MENUS[seg].items.some(i=>i[3]===current)) go('services');
+  else markNav(current);
+}
+function setStage(s){
+  stage=s;
+  cat='Все'; // категории для "первого бизнеса" — другой набор, не тащим старый выбор
+  document.querySelectorAll('#stagesw button').forEach(b=>b.classList.toggle('on',b.dataset.st===s));
+  renderNav();renderChips();renderServices();renderPanel();
+}
+
+renderNav();renderChips();renderServices();renderPickers();renderPanel();
+</script>
+</body>
+</html>

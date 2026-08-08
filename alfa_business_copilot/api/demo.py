@@ -4,6 +4,7 @@ import hashlib
 import json
 import logging
 import os
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -14,17 +15,30 @@ logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_FIXTURES_PATH = PROJECT_ROOT / "demo_fixtures.json"
+DEFAULT_CACHE_PATH = PROJECT_ROOT / "llm_cache.json"
 
 _TRUE_VALUES = {"1", "true", "yes", "on"}
+_FALSE_VALUES = {"0", "false", "no", "off"}
 
 
 def is_demo_mode() -> bool:
     return os.environ.get("DEMO_MODE", "").strip().lower() in _TRUE_VALUES
 
 
+def is_cache_enabled() -> bool:
+    """LLM_CACHE по умолчанию включён — в отличие от DEMO_MODE, здесь нужен
+    явный отказ (0/false/no/off), а не явное включение."""
+    return os.environ.get("LLM_CACHE", "1").strip().lower() not in _FALSE_VALUES
+
+
 def fixtures_path() -> Path:
     raw = os.environ.get("DEMO_FIXTURES_PATH", "").strip()
     return Path(raw) if raw else DEFAULT_FIXTURES_PATH
+
+
+def cache_path() -> Path:
+    raw = os.environ.get("LLM_CACHE_PATH", "").strip()
+    return Path(raw) if raw else DEFAULT_CACHE_PATH
 
 
 def hash_prompt(system: str, user: str) -> str:
@@ -128,3 +142,51 @@ class RecordingLLMClient(LLMClient):
             "response": response,
         }
         logger.info("записан вызов: scenario=%s mode=%s key=%s", self.scenario, mode, key[:12])
+
+
+class CachingLLMClient(LLMClient):
+    """Кэширует ответы настоящего LLMClient по тому же ключу — хэшу пары
+    (system, user), — что использует DemoLLMClient/RecordingLLMClient. При
+    повторном запросе с точно таким же промптом отдаёт сохранённый ответ без
+    обращения к провайдеру; при промахе — идёт в LLM и сохраняет результат.
+    Кэш лежит в JSON рядом с demo_fixtures.json (тот же формат, те же
+    load_fixtures/save_fixtures) и переживает перезапуск процесса — в
+    отличие от DemoLLMClient, здесь не заглушка при промахе, а настоящий
+    вызов: кэш — это ускорение и экономия дневного лимита, а не подмена.
+
+    Ключ — hash_prompt(system, user), без mode, как и у DemoLLMClient: если
+    бы generate() и generate_json() когда-нибудь отрендерили побайтово
+    одинаковый (system, user), второй вызов перезаписал бы запись первого.
+    На практике это не происходит — в проекте каждый вызов рендерится своим
+    шаблоном (risk_entity_extraction, risk_explanation и т.д.), и текст
+    заведомо разный."""
+
+    def __init__(self, inner: LLMClient, path: Path | None = None) -> None:
+        self._inner = inner
+        self._path = path or cache_path()
+        self._lock = threading.Lock()
+        self._entries = load_fixtures(self._path)
+
+    def generate(self, system: str, user: str, **kwargs) -> str:
+        return self._call("text", self._inner.generate, system, user, **kwargs)
+
+    def generate_json(self, system: str, user: str, **kwargs) -> dict:
+        return self._call("json", self._inner.generate_json, system, user, **kwargs)
+
+    def _call(self, mode: str, fn, system: str, user: str, **kwargs):
+        key = hash_prompt(system, user)
+        with self._lock:
+            entry = self._entries.get(key)
+        if entry is not None and entry.get("mode") == mode:
+            logger.info("LLM cache hit: mode=%s key=%s", mode, key[:12])
+            return entry["response"]
+
+        response = fn(system, user, **kwargs)  # промах — идём в LLM по-настоящему
+
+        with self._lock:
+            self._entries[key] = {
+                "scenario": "cache", "mode": mode, "system": system, "user": user, "response": response,
+            }
+            save_fixtures(self._path, self._entries)
+        logger.info("LLM cache miss, сохранено: mode=%s key=%s", mode, key[:12])
+        return response

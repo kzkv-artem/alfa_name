@@ -8,8 +8,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from alfa_agent.gov_support import GovSupportAgent, decide, missing_documents
 from alfa_agent.gov_support.matching import check_eligibility
 
-from api.deps import get_gov_agent, get_gov_conn, get_gov_demo_client_id
-from api.schemas.gov_support import DocumentsRequestOut, DraftOut, ProgramAdviceOut, ProgramMatchOut
+from api.deps import get_gov_agent, get_gov_client_id, get_gov_conn
+from api.schemas.gov_support import (
+    DocumentsRequestOut,
+    DraftOut,
+    ProgramAdviceOut,
+    ProgramMatchListOut,
+    ProgramMatchOut,
+)
 
 router = APIRouter(prefix="/gov_support", tags=["gov_support"])
 
@@ -30,33 +36,41 @@ def _get_program(conn: sqlite3.Connection, program_id: int) -> sqlite3.Row:
     return program
 
 
-@router.get("/programs", response_model=list[ProgramMatchOut])
+@router.get("/programs", response_model=ProgramMatchListOut)
 def list_programs(
     conn: sqlite3.Connection = Depends(get_gov_conn),
-    client_id: int = Depends(get_gov_demo_client_id),
-) -> list[ProgramMatchOut]:
+    client_id: int = Depends(get_gov_client_id),
+) -> ProgramMatchListOut:
     client = _get_client(conn, client_id)
     as_of = date.today().isoformat()
     programs = conn.execute("SELECT * FROM support_program").fetchall()
-    out = []
+    programs_with_docs = {
+        row["program_id"]
+        for row in conn.execute("SELECT DISTINCT program_id FROM required_document").fetchall()
+    }
+    eligible, not_eligible = [], []
     for program in programs:
         is_eligible, reason = check_eligibility(client, program, as_of)
-        out.append(
-            ProgramMatchOut(
-                program_id=program["program_id"],
-                program_name=program["name"],
-                is_eligible=is_eligible,
-                reason=reason,
-            )
+        match = ProgramMatchOut(
+            program_id=program["program_id"],
+            program_name=program["name"],
+            is_eligible=is_eligible,
+            reason=reason,
         )
-    return out
+        (eligible if is_eligible else not_eligible).append(match)
+    # Программы с реальным списком документов (required_document, т.е. то, что
+    # заведено в REQUIRED_DOCS_BY_PROGRAM) — наверх. `programs` уже отдан из БД
+    # по возрастанию program_id, а list.sort() в Python устойчив, так что внутри
+    # каждой из двух групп порядок остаётся тем же самым между запусками.
+    eligible.sort(key=lambda m: m.program_id not in programs_with_docs)
+    return ProgramMatchListOut(eligible=eligible, not_eligible=not_eligible)
 
 
 @router.get("/programs/{program_id}/advice", response_model=ProgramAdviceOut)
 def get_advice(
     program_id: int,
     conn: sqlite3.Connection = Depends(get_gov_conn),
-    client_id: int = Depends(get_gov_demo_client_id),
+    client_id: int = Depends(get_gov_client_id),
     agent: GovSupportAgent = Depends(get_gov_agent),
 ) -> ProgramAdviceOut:
     client = _get_client(conn, client_id)
@@ -70,7 +84,7 @@ def get_advice(
 def draft(
     program_id: int,
     conn: sqlite3.Connection = Depends(get_gov_conn),
-    client_id: int = Depends(get_gov_demo_client_id),
+    client_id: int = Depends(get_gov_client_id),
     agent: GovSupportAgent = Depends(get_gov_agent),
 ) -> DraftOut:
     client = _get_client(conn, client_id)
@@ -87,7 +101,7 @@ def draft(
 def request_documents(
     program_id: int,
     conn: sqlite3.Connection = Depends(get_gov_conn),
-    client_id: int = Depends(get_gov_demo_client_id),
+    client_id: int = Depends(get_gov_client_id),
     agent: GovSupportAgent = Depends(get_gov_agent),
 ) -> DocumentsRequestOut:
     client = _get_client(conn, client_id)
