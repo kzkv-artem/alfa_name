@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 from datetime import date
 
@@ -11,6 +12,28 @@ def client_age(birth_date: str, as_of: str) -> int:
     return a.year - b.year - ((a.month, a.day) < (b.month, b.day))
 
 
+def _industry_matches(industry_allowed_json: str | None, client_industry: str | None) -> bool:
+    """industry_allowed — короткие русские фразы от LLM (см. normalize.py),
+    client.industry_code — свободный текст. Точного словаря нет ни у кого,
+    поэтому сравниваем подстрокой в обе стороны и пересечением по словам —
+    грубее semantic-match, но без лишнего LLM-вызова в рантайме. Пустой
+    список — программа без отраслевого ограничения, доступна всем."""
+    allowed = json.loads(industry_allowed_json) if industry_allowed_json else []
+    if not allowed:
+        return True
+    if not client_industry:
+        return False
+    client_lower = client_industry.lower()
+    client_words = set(client_lower.replace(",", " ").split())
+    for phrase in allowed:
+        phrase_lower = phrase.lower()
+        if phrase_lower in client_lower or client_lower in phrase_lower:
+            return True
+        if set(phrase_lower.split()) & client_words:
+            return True
+    return False
+
+
 def check_eligibility(client: sqlite3.Row, program: sqlite3.Row, as_of: str) -> tuple[bool, str]:
     if not program["is_open"]:
         return False, "Приём заявок по этой программе сейчас закрыт или требует уточнения статуса."
@@ -19,7 +42,10 @@ def check_eligibility(client: sqlite3.Row, program: sqlite3.Row, as_of: str) -> 
         lo, hi = program["age_min"] or 0, program["age_max"] or 200
         if not (lo <= age <= hi):
             return False, f"Возраст клиента ({age}) не входит в диапазон {lo}-{hi} лет."
-    return True, "Клиент проходит по всем распознанным критериям (открытый приём, возраст)."
+    if not _industry_matches(program["industry_allowed"], client["industry_code"]):
+        allowed = json.loads(program["industry_allowed"]) if program["industry_allowed"] else []
+        return False, f"Программа рассчитана на другие отрасли: {', '.join(allowed)}."
+    return True, "Клиент проходит по всем распознанным критериям (открытый приём, возраст, отрасль)."
 
 
 def run_matching(conn: sqlite3.Connection, client_id: int, as_of: str) -> list[dict]:
