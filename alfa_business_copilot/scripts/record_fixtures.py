@@ -1,6 +1,10 @@
-"""Прогоняет 4 сценария демо-презентации через реальный API (живой LLM) и
+"""Прогоняет 5 сценариев демо-презентации через реальный API (живой LLM) и
 записывает все LLM-вызовы в demo_fixtures.json. Требует настоящего ключа в
 .env и выключенного DEMO_MODE — иначе просто нечего было бы записывать.
+
+Все сценарии, где это применимо, — от лица Алины Гарифуллиной (студия
+маникюра, сквозной демо-клиент). Кассовый разрыв не включён: у Алины он не
+конструировался (alert=False), а LLM там дёргается только внутри алерта.
 
 Запуск: ./.venv/Scripts/python.exe scripts/record_fixtures.py
 """
@@ -60,55 +64,42 @@ def main() -> None:
         ))
         print(f"[1] turn2 reply: {r2['reply'][:120]}...")
 
-        # --- 2. Кассовый разрыв: client_2, специально сконструирован с алертом ---
-        recorder.scenario = "cashflow_alert_client_2"
-        decision = _must_ok(client.get("/cashflow/clients/client_2/decision"))
-        if not decision["alert"]:
-            raise SystemExit(
-                "client_2 неожиданно без алерта — параметры в "
-                "alfa_agent/cashflow/fixtures.py::seed_demo_alert_client разъехались "
-                "с ожиданием. Фикстуры не записаны."
-            )
-        print(f"[2] alert message: {decision['message'][:120]}...")
-
-        # --- 3. Гос поддержка: Дарья, социальный контракт ---
-        programs = _must_ok(client.get("/gov_support/programs"))
+        # --- 2. Гос поддержка: Алина, социальный контракт ---
+        beauty_client_id = app.state.gov_beauty_client_id
+        programs = _must_ok(client.get(f"/gov_support/programs?client_id={beauty_client_id}"))
         target = next(
-            (p for p in programs if "социальный контракт" in p["program_name"].lower()),
+            (p for p in programs["eligible"] if "социальный контракт" in p["program_name"].lower()),
             None,
         )
         if target is None:
             raise SystemExit(
-                "Программа 'Социальный контракт' не найдена среди /gov_support/programs — "
-                "проверьте otbor/mery-podderzhki-msp-2026.csv. Фикстуры не записаны."
+                "Программа 'Социальный контракт' не найдена среди подходящих Алине "
+                "программ — проверьте industry_allowed в normalize.py и "
+                "otbor/mery-podderzhki-msp-2026.csv. Фикстуры не записаны."
             )
-        recorder.scenario = "gov_support_darya_social_contract_advice"
-        advice = _must_ok(client.get(f"/gov_support/programs/{target['program_id']}/advice"))
-        print(f"[3] advice: {advice['explanation'][:120]}...")
+        recorder.scenario = "gov_support_alina_social_contract_advice"
+        advice = _must_ok(client.get(
+            f"/gov_support/programs/{target['program_id']}/advice?client_id={beauty_client_id}"
+        ))
+        print(f"[2] advice: {advice['explanation'][:120]}...")
 
-        if advice["decision"] == "propose_draft":
-            recorder.scenario = "gov_support_darya_social_contract_draft"
-            draft = _must_ok(client.post(f"/gov_support/programs/{target['program_id']}/draft"))
-            print(f"[3] draft: {draft['draft_text'][:120]}...")
-
-        # --- 4. Страхование: рекомендация + follow-up про второй продукт ---
-        ins_clients = _must_ok(client.get("/insurance/clients"))
-        target_client = next(c for c in ins_clients if c["legal_form"] != "самозанятый")
-        recorder.scenario = f"insurance_recommendation_client_{target_client['client_id']}"
-        rec = _must_ok(client.get(f"/insurance/clients/{target_client['client_id']}/recommendation"))
+        # --- 3. Страхование: рекомендация Алине + follow-up про второй продукт ---
+        recorder.scenario = "insurance_recommendation_demo_beauty"
+        rec = _must_ok(client.get("/insurance/clients/demo_beauty/recommendation"))
         if rec["reply"] is None:
             raise SystemExit(
-                f"У клиента {target_client['client_id']} нет рекомендаций — выберите "
-                "другого клиента в скрипте. Фикстуры не записаны."
+                "У demo_beauty нет рекомендаций — проверьте "
+                "alfa_agent/insurance/fixtures.py::demo_beauty_client_features. "
+                "Фикстуры не записаны."
             )
-        print(f"[4] recommendation: {rec['reply'][:120]}...")
+        print(f"[3] recommendation: {rec['reply'][:120]}...")
 
         recorder.scenario = "insurance_followup_second_product"
         followup = _must_ok(client.post(
             f"/insurance/sessions/{rec['session_id']}/followup",
             json={"message": "а что насчёт второго продукта в списке, чем он отличается?"},
         ))
-        print(f"[4] followup: {followup['reply'][:120]}...")
+        print(f"[3] followup: {followup['reply'][:120]}...")
 
     save_fixtures(fixtures_path(), recorder.entries)
     print(f"\nЗаписано {len(recorder.entries)} фикстур -> {fixtures_path()}")
