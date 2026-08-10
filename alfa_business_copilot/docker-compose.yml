@@ -1,0 +1,32 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      # SQLite (otbor/*.db) и данные (модель CatBoost, синтетика страхования)
+      # держим на хосте — переживают docker compose build/up, не только restart.
+      - ./otbor:/app/otbor
+      - ./data:/app/data
+      - ./demo_fixtures.json:/app/demo_fixtures.json
+      - ./llm_cache.json:/app/llm_cache.json
+    expose:
+      - "8000"
+
+  caddy:
+    image: caddy:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  caddy_data:
+  caddy_config:

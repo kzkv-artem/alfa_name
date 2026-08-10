@@ -1,0 +1,14 @@
+.venv/
+venv/
+__pycache__/
+
+# Секрет не должен попасть в слой образа — переменные приходят через
+# docker-compose env_file в рантайме, файл в самом контейнере не нужен.
+.env
+*.py[cod]
+.git/
+.gitignore
+.idea/
+.DS_Store
+.ipynb_checkpoints/
+catboost_info/
