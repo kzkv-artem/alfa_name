@@ -31,29 +31,32 @@
 
   header{padding:26px 0}
   header .wrap{display:flex;align-items:center;gap:16px}
-  .logo{display:flex;align-items:center;gap:9px;font-weight:600;font-size:15px}
-  .logo i{width:26px;height:26px;border-radius:8px;background:var(--red);color:#fff;
-    display:grid;place-items:center;font-style:normal;font-weight:700;font-size:14px}
-  header a.enter{margin-left:auto;font-size:13.5px;color:var(--ink-soft)}
-  header a.enter:hover{color:var(--ink)}
+  .logo{display:flex;align-items:center;gap:11px;font-weight:600;font-size:18px}
+  .logo i{width:36px;height:36px;border-radius:11px;background:var(--red);color:#fff;
+    display:grid;place-items:center;font-style:normal;font-weight:700;font-size:17px}
+  .account{margin-left:auto;width:40px;height:40px;border-radius:12px;border:1.5px solid var(--line);
+    display:grid;place-items:center;color:var(--ink-soft);transition:background .15s,color .15s,border-color .15s}
+  .account:hover{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+  .account svg{width:19px;height:19px}
 
   main{flex:1;display:flex;flex-direction:column;justify-content:center;padding:26px 0 50px}
-  .intro{text-align:center;margin-bottom:36px}
+  .intro{text-align:center;margin-bottom:60px}
   .eyebrow{font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);
     font-weight:600;margin-bottom:16px}
-  .intro h1{font-size:clamp(28px,4vw,42px);max-width:18em;margin:0 auto}
+  .intro h1{font-size:clamp(32px,4.6vw,50px);max-width:18em;margin:0 auto}
   .intro p{color:var(--ink-soft);font-size:16px;margin-top:14px}
 
   .choices{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-  .choice{position:relative;display:block;border-radius:26px;padding:38px 32px;overflow:hidden;
-    min-height:320px;display:flex;flex-direction:column;justify-content:flex-end;gap:10px;
+  .choice{border-radius:26px;padding:30px 32px;overflow:hidden;
+    min-height:230px;display:flex;flex-direction:column;justify-content:flex-start;gap:8px;
     transition:transform .18s;border:1px solid var(--line)}
   .choice:hover{transform:translateY(-4px)}
   .choice .tag{font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;
-    opacity:.7;margin-bottom:4px}
-  .choice h2{font-size:clamp(22px,2.6vw,30px)}
+    opacity:.7}
+  .choice h2{font-size:clamp(26px,3vw,36px)}
   .choice p{font-size:14.5px;max-width:26em}
-  .choice .go{margin-top:14px;font-size:14.5px;font-weight:600;display:flex;align-items:center;gap:6px}
+  .choice .go{margin-top:auto;padding-top:14px;font-size:14.5px;font-weight:600;
+    display:flex;align-items:center;gap:6px}
   .choice .go span{transition:transform .18s}
   .choice:hover .go span{transform:translateX(4px)}
 
@@ -69,7 +72,7 @@
 
   @media (max-width:720px){
     .choices{grid-template-columns:1fr}
-    .choice{min-height:220px}
+    .choice{min-height:190px}
   }
 </style>
 </head>
@@ -78,37 +81,42 @@
 <header>
   <div class="wrap">
     <div class="logo"><i>A</i> Альфа-Бизнес</div>
-    <a class="enter" href="/cabinet.html">Уже клиент? Личный кабинет →</a>
+    <a class="account" href="/cabinet.html" aria-label="Уже клиент? Личный кабинет" title="Уже клиент? Личный кабинет">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="8" r="4"></circle>
+        <path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"></path>
+      </svg>
+    </a>
   </div>
 </header>
 
 <main>
   <div class="wrap">
     <div class="intro">
-      <div class="eyebrow">копилот для предпринимателя</div>
-      <h1>Счёт, который понимает, чем вы занимаетесь</h1>
-      <p>Выберите свою сферу — покажем, что устроено именно под неё</p>
+      <div class="eyebrow">копилот для&nbsp;предпринимателя</div>
+      <h1>Счёт, который понимает, чем&nbsp;вы&nbsp;занимаетесь</h1>
+      <p>Выберите свою сферу — покажем, что&nbsp;устроено именно под&nbsp;неё</p>
     </div>
 
     <div class="choices">
       <a class="choice beauty" href="/beauty.html">
-        <div class="tag">для мастеров</div>
+        <div class="tag">для&nbsp;мастеров</div>
         <h2>Бьюти-сфера</h2>
-        <p>Маникюр, брови и ресницы, парикмахерские, массаж, косметология, эпиляция</p>
-        <div class="go">Открыть лендинг <span>→</span></div>
+        <p>Маникюр, брови и&nbsp;ресницы, парикмахерские, массаж, косметология, эпиляция</p>
+        <div class="go">Открыть лендинг&nbsp;<span>→</span></div>
       </a>
       <a class="choice creative" href="/creative.html">
-        <div class="tag">для авторов</div>
+        <div class="tag">для&nbsp;авторов</div>
         <h2>Креативные индустрии</h2>
-        <p>Дизайн и брендинг, видеопродакшен, иллюстрация, фотография, музыка и звук</p>
-        <div class="go">Открыть лендинг <span>→</span></div>
+        <p>Дизайн и&nbsp;брендинг, видеопродакшен, иллюстрация, фотография, музыка и&nbsp;звук</p>
+        <div class="go">Открыть лендинг&nbsp;<span>→</span></div>
       </a>
     </div>
   </div>
 </main>
 
 <footer>
-  <div class="wrap">Макет для кейс-чемпионата. Не является офертой.</div>
+  <div class="wrap">Макет для&nbsp;кейс-чемпионата. Не&nbsp;является офертой.</div>
 </footer>
 
 </body>
