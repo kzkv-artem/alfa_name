@@ -60,7 +60,7 @@ class RiskAdvisorAgent:
 
         missing = self._missing_fields(new_state)
         if missing:
-            question = self._ask_clarifying(new_state, missing)
+            question = self._ask_clarifying(new_state, missing, user_message)
             return question, new_state
 
         assessment = risk_scoring.assess(
@@ -130,12 +130,13 @@ class RiskAdvisorAgent:
             missing.append("регион")
         return missing
 
-    def _ask_clarifying(self, state: RiskChatState, missing: list[str]) -> str:
+    def _ask_clarifying(self, state: RiskChatState, missing: list[str], user_message: str) -> str:
         system, user = render(
             "risk_clarifying_question",
             known_industry=_display_name(state.industry_code, get_industry),
             known_region=_display_name(state.region_code, get_region),
             missing=", ".join(missing),
+            user_message=user_message,
         )
         return self.llm_client.generate(system=system, user=user)
 
