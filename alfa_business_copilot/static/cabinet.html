@@ -722,18 +722,32 @@ function notEligibleHTML(rows){
   </details>`;
 }
 
-// GET /gov_support/programs не даёт числового процента совпадения — только
-// is_eligible (bool). В .pct подставляем "Подходит" вместо выдуманного %.
-// .why берём из /advice (LLM-обоснование), p — из reason (детерминированная
-// причина, есть уже в /programs). Чтобы не заказывать LLM-объяснение сразу
-// для всех подходящих программ (их может быть больше десятка), берём первые 3
-// в карточки, остальные подходящие и все не подошедшие — не считая LLM.
+// GET /gov_support/match — без привязки к зарегистрированному клиенту,
+// прямо по тому, что написано в поле «опишите бизнес» (+ выбранный чип
+// отрасли, если есть, — просто дописывается к тексту, отрасль всё равно
+// сравнивается нечётким совпадением по словам/подстроке, а не точным кодом).
+// В .pct подставляем "Подходит" вместо выдуманного %. .why — из /advice
+// (LLM-обоснование), reason — детерминированная причина из /match. Чтобы не
+// заказывать LLM-объяснение сразу для всех подходящих программ, берём первые
+// 3 в карточки, остальные подходящие и все не подошедшие — не считая LLM.
+// PDF-черновик тут не предлагаем (canDraft:false) — заявителя без имени в
+// БД нет, оформлять черновик не для кого; кнопка «Скачать PDF» в cardsFor()
+// остаётся рабочей на API-уровне (/programs/{id}/draft.pdf?client_id=),
+// просто из этого конкретного экрана сейчас не вызывается.
 async function runSupport(){
   const o=document.getElementById('sup-out');
+  const activeChip = document.querySelector('#sup-chips .chip.on');
+  const description = [document.getElementById('sup-text').value.trim(), activeChip ? activeChip.textContent : '']
+    .filter(Boolean).join(', ');
+  if(!description){
+    o.innerHTML = '<div class="card empty"><div class="box">▤</div><b>Опишите бизнес</b>'
+      + '<p>Расскажите в паре предложений, чем занимаетесь, — агент сверит с реестром программ</p></div>';
+    return;
+  }
   o.innerHTML='<div class="cat-h">Агент проверяет условия отбора…</div>';
 
   let data;
-  try{ data = await apiFetch(`/gov_support/programs?client_id=${GOV_BEAUTY_CLIENT_ID}`) }
+  try{ data = await apiFetch(`/gov_support/match?description=${encodeURIComponent(description)}`) }
   catch(err){ o.innerHTML = apiErrorHTML(err); return }
 
   const {eligible, not_eligible} = data;
@@ -746,7 +760,7 @@ async function runSupport(){
 
   const shortlist = eligible.slice(0,3);
   const settled = await Promise.allSettled(
-    shortlist.map(p=>apiFetch(`/gov_support/programs/${p.program_id}/advice?client_id=${GOV_BEAUTY_CLIENT_ID}`))
+    shortlist.map(p=>apiFetch(`/gov_support/match/${p.program_id}/advice?description=${encodeURIComponent(description)}`))
   );
   const rows = settled.map((res,i)=>{
     const p = shortlist[i];
@@ -755,10 +769,8 @@ async function runSupport(){
       : (res.reason && res.reason.code==='llm_unavailable'
           ? 'ИИ временно недоступен — обоснование не загрузилось'
           : 'Не удалось загрузить обоснование');
-    const missing = res.status==='fulfilled' ? res.value.missing_documents : [];
-    const canDraft = res.status==='fulfilled' && res.value.decision === 'propose_draft';
     return ['Подходит', p.program_name, p.reason, why, {
-      missing, canDraft, programId: p.program_id, sourceUrl: p.source_url,
+      canDraft:false, sourceUrl: p.source_url,
     }];
   });
   o.innerHTML = `<div class="cat-h">Подошли ${eligible.length} из ${eligible.length + not_eligible.length} программ</div>`

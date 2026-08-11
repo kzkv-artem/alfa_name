@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
-from datetime import date
+from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 
@@ -63,6 +63,23 @@ def _get_program(conn: sqlite3.Connection, program_id: int) -> sqlite3.Row:
     return program
 
 
+def _virtual_client(description: str) -> dict:
+    """Для поиска по свободному описанию — без записи в БД, без реального
+    client_id. check_eligibility читает только birth_date и industry_code,
+    ей всё равно, sqlite3.Row это или dict. Возраст не известен — берём
+    условно 30 лет, чтобы программы под конкретную возрастную группу
+    (14-25/14-35, студенты) не засчитывались как подходящие вслепую.
+    Отрасль — буквально то, что написал пользователь: check_eligibility
+    и так сравнивает industry_code нечётким совпадением по словам/подстроке,
+    у Алины и Дарьи в БД там тоже просто свободный текст, а не код."""
+    return {
+        "full_name": "Ваш бизнес",
+        "entity_type": "не указана",
+        "industry_code": description,
+        "birth_date": (date.today() - timedelta(days=365 * 30)).isoformat(),
+    }
+
+
 @router.get("/programs", response_model=ProgramMatchListOut)
 def list_programs(
     conn: sqlite3.Connection = Depends(get_gov_conn),
@@ -113,6 +130,61 @@ def get_advice(
         decision=advice.decision,
         missing_documents=advice.missing_documents,
         explanation=advice.explanation,
+        source_url=_resolve_url(program),
+    )
+
+
+@router.get("/match", response_model=ProgramMatchListOut)
+def match_by_description(
+    description: str,
+    conn: sqlite3.Connection = Depends(get_gov_conn),
+) -> ProgramMatchListOut:
+    """То же, что /programs, но без привязки к зарегистрированному клиенту —
+    для поля «опишите бизнес своими словами» в кабинете. PDF-черновик тут
+    сознательно не предлагается: заявителя без имени в БД нет, оформлять
+    черновик не для кого."""
+    description = description.strip()
+    if not description:
+        raise HTTPException(400, "Опишите бизнес — поле не должно быть пустым")
+    client = _virtual_client(description)
+    as_of = date.today().isoformat()
+    programs = conn.execute(_PROGRAM_QUERY).fetchall()
+    eligible, not_eligible = [], []
+    for program in programs:
+        is_eligible, reason = check_eligibility(client, program, as_of)
+        match = ProgramMatchOut(
+            program_id=program["program_id"],
+            program_name=program["name"],
+            is_eligible=is_eligible,
+            reason=reason,
+            source_url=_resolve_url(program),
+        )
+        (eligible if is_eligible else not_eligible).append(match)
+    return ProgramMatchListOut(eligible=eligible, not_eligible=not_eligible)
+
+
+@router.get("/match/{program_id}/advice", response_model=ProgramAdviceOut)
+def match_advice(
+    program_id: int,
+    description: str,
+    conn: sqlite3.Connection = Depends(get_gov_conn),
+    agent: GovSupportAgent = Depends(get_gov_agent),
+) -> ProgramAdviceOut:
+    description = description.strip()
+    if not description:
+        raise HTTPException(400, "Опишите бизнес — поле не должно быть пустым")
+    program = _get_program(conn, program_id)
+    client = _virtual_client(description)
+    is_eligible, reason = check_eligibility(client, program, date.today().isoformat())
+    explanation = agent.explain_eligibility(client, program, is_eligible, reason)
+    return ProgramAdviceOut(
+        program_id=program["program_id"],
+        program_name=program["name"],
+        is_eligible=is_eligible,
+        reason=reason,
+        decision="eligible" if is_eligible else "not_eligible",
+        missing_documents=(),
+        explanation=explanation,
         source_url=_resolve_url(program),
     )
 
