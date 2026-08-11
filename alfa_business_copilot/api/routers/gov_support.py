@@ -3,10 +3,11 @@ from __future__ import annotations
 import sqlite3
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 
 from alfa_agent.gov_support import GovSupportAgent, decide, missing_documents
 from alfa_agent.gov_support.matching import check_eligibility
+from alfa_agent.gov_support.pdf_export import build_draft_pdf
 
 from api.deps import get_gov_agent, get_gov_client_id, get_gov_conn
 from api.schemas.gov_support import (
@@ -19,6 +20,32 @@ from api.schemas.gov_support import (
 
 router = APIRouter(prefix="/gov_support", tags=["gov_support"])
 
+# Прямые ссылки на страницу конкретной программы, а не на корень домена
+# (в отличие от raw_program_source.source_url — это то, что было доступно
+# для парсинга колонки "Источник" в CSV). Найдено вручную для части
+# программ там, где у организатора реально есть отдельная страница —
+# остальные 20 программ либо не имеют выделенной страницы вообще (заявка
+# только через личный кабинет на портале), либо не проверялись: для них
+# используется source_url как есть.
+PROGRAM_URL_OVERRIDES: dict[str, str] = {
+    "fsi-student-startup": "https://fasie.ru/programs/programma-studstartup/",
+    "fsi-start-1": "https://fasie.ru/programs/programma-start/",
+    "fsi-start": "https://fasie.ru/programs/programma-start/",
+    "program-1764": "https://invest.economy.gov.ru/programma-lgotnogo-kreditovaniya-subektov-msp-programma-1764-",
+    "umbrella-guarantee": "https://corpmsp.ru/to-banks/zontichnyy-mekhanizm/",
+    "my-business-centers": "https://мойбизнес.рф/about/",
+}
+
+_PROGRAM_QUERY = """
+    SELECT sp.*, rps.external_id, rps.source_url
+    FROM support_program sp
+    JOIN raw_program_source rps ON rps.source_row_id = sp.raw_source_id
+"""
+
+
+def _resolve_url(program: sqlite3.Row) -> str:
+    return PROGRAM_URL_OVERRIDES.get(program["external_id"], program["source_url"] or "")
+
 
 def _get_client(conn: sqlite3.Connection, client_id: int) -> sqlite3.Row:
     client = conn.execute("SELECT * FROM client WHERE client_id = ?", (client_id,)).fetchone()
@@ -29,7 +56,7 @@ def _get_client(conn: sqlite3.Connection, client_id: int) -> sqlite3.Row:
 
 def _get_program(conn: sqlite3.Connection, program_id: int) -> sqlite3.Row:
     program = conn.execute(
-        "SELECT * FROM support_program WHERE program_id = ?", (program_id,)
+        f"{_PROGRAM_QUERY} WHERE sp.program_id = ?", (program_id,)
     ).fetchone()
     if program is None:
         raise HTTPException(404, f"Программа {program_id} не найдена")
@@ -43,7 +70,7 @@ def list_programs(
 ) -> ProgramMatchListOut:
     client = _get_client(conn, client_id)
     as_of = date.today().isoformat()
-    programs = conn.execute("SELECT * FROM support_program").fetchall()
+    programs = conn.execute(_PROGRAM_QUERY).fetchall()
     programs_with_docs = {
         row["program_id"]
         for row in conn.execute("SELECT DISTINCT program_id FROM required_document").fetchall()
@@ -56,6 +83,7 @@ def list_programs(
             program_name=program["name"],
             is_eligible=is_eligible,
             reason=reason,
+            source_url=_resolve_url(program),
         )
         (eligible if is_eligible else not_eligible).append(match)
     # Программы с реальным списком документов (required_document, т.е. то, что
@@ -77,7 +105,16 @@ def get_advice(
     program = _get_program(conn, program_id)
     is_eligible, reason = check_eligibility(client, program, date.today().isoformat())
     advice = agent.advise(conn, client, program, is_eligible, reason)
-    return ProgramAdviceOut.model_validate(advice)
+    return ProgramAdviceOut(
+        program_id=advice.program_id,
+        program_name=advice.program_name,
+        is_eligible=advice.is_eligible,
+        reason=advice.reason,
+        decision=advice.decision,
+        missing_documents=advice.missing_documents,
+        explanation=advice.explanation,
+        source_url=_resolve_url(program),
+    )
 
 
 @router.post("/programs/{program_id}/draft", response_model=DraftOut)
@@ -95,6 +132,28 @@ def draft(
         raise HTTPException(409, "Для этой программы черновик не предлагается — проверьте /advice")
     text = agent.draft_application(client, program, missing)
     return DraftOut(draft_text=text)
+
+
+@router.post("/programs/{program_id}/draft.pdf")
+def draft_pdf(
+    program_id: int,
+    conn: sqlite3.Connection = Depends(get_gov_conn),
+    client_id: int = Depends(get_gov_client_id),
+    agent: GovSupportAgent = Depends(get_gov_agent),
+) -> Response:
+    client = _get_client(conn, client_id)
+    program = _get_program(conn, program_id)
+    is_eligible, _reason = check_eligibility(client, program, date.today().isoformat())
+    missing = missing_documents(conn, client_id, program_id) if is_eligible else []
+    if decide(is_eligible, missing) != "propose_draft":
+        raise HTTPException(409, "Для этой программы черновик не предлагается — проверьте /advice")
+    text = agent.draft_application(client, program, missing)
+    pdf_bytes = build_draft_pdf(client, program, missing, text)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="draft_program_{program_id}.pdf"'},
+    )
 
 
 @router.post("/programs/{program_id}/request-documents", response_model=DocumentsRequestOut)

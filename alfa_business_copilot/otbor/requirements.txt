@@ -13,3 +13,6 @@ matplotlib>=3.7.0
 # API-слой
 fastapi>=0.110.0
 uvicorn[standard]>=0.29.0
+
+# PDF-экспорт черновика заявления на господдержку
+reportlab>=4.0.0

@@ -638,10 +638,52 @@ function pick(el,multi){
   else{el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));el.classList.add('on')}
 }
 
+function pdfErrorText(err){
+  if(err && err.code==='llm_unavailable')
+    return 'ИИ временно недоступен — провайдер модели не отвечает, похоже, исчерпан дневной лимит бесплатного тарифа. Попробуйте ещё раз чуть позже.';
+  if(err && err.code==='llm_config_error')
+    return 'ИИ не настроен — на сервере не задан ключ доступа к модели.';
+  return (err && err.message) || 'Не удалось сформировать PDF.';
+}
+
+// POST — не обычная ссылка, поэтому скачивание через fetch+blob: получаем
+// бинарь, создаём временный object URL и кликаем по нему программно.
+async function downloadDraftPdf(programId, btn){
+  const original = btn.textContent;
+  btn.textContent = 'Формирую…';
+  btn.disabled = true;
+  try{
+    const res = await fetch(`/gov_support/programs/${programId}/draft.pdf?client_id=${GOV_BEAUTY_CLIENT_ID}`, {method:'POST'});
+    if(!res.ok){
+      let data=null; try{ data = await res.json() }catch(e){}
+      const err = new Error((data&&(data.message||data.detail)) || `HTTP ${res.status}`);
+      err.code = data && data.error;
+      throw err;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `draft_program_${programId}.pdf`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }catch(err){
+    alert(pdfErrorText(err));
+  }finally{
+    btn.textContent = original;
+    btn.disabled = false;
+  }
+}
+
 // r = [pct, name, desc, why, extra?]. extra.urgency — для страховки ('high'/'normal'),
 // extra.missing — для господдержки (список недостающих документов, необязательный,
-// показываем строкой только если непустой). Классы — только уже существующие
-// (.st/.st-auto/.st-off — тот же бейдж, что и в статусах сервисов).
+// показываем строкой только если непустой). extra.programId/canDraft/sourceUrl —
+// тоже только для господдержки: «Скачать PDF» — только когда backend реально
+// предлагает черновик (decision==='propose_draft', та же проверка, что и на
+// сервере в /draft.pdf — кнопка не гарантия, а просто не показываем то, что
+// всё равно вернёт 409), «Подробнее» — реальная ссылка на страницу программы,
+// если она есть. Для страховки (или если ни того ни другого нет) — старая
+// заглушка-кнопка, чтобы не терять то, что было. Классы — только уже
+// существующие (.st/.st-auto/.st-off — тот же бейдж, что и в статусах сервисов).
 function cardsFor(rows){
   return rows.map(r=>{
     const [pct,name,desc,why,extra={}] = r;
@@ -651,10 +693,19 @@ function cardsFor(rows){
     const missingLine = (extra.missing && extra.missing.length)
       ? `<p style="margin-top:6px">Для подачи не хватает: ${extra.missing.join(', ')}</p>`
       : '';
+    const pdfBtn = extra.canDraft
+      ? `<button class="btn btn-ghost btn-sm" onclick="downloadDraftPdf(${extra.programId},this)">Скачать PDF</button>`
+      : '';
+    const moreLink = extra.sourceUrl
+      ? `<a class="btn btn-ghost btn-sm" href="${extra.sourceUrl}" target="_blank" rel="noopener">Подробнее</a>`
+      : '';
+    const actions = (pdfBtn || moreLink)
+      ? `<div style="display:flex;flex-direction:column;gap:6px;align-items:stretch;text-align:center">${pdfBtn}${moreLink}</div>`
+      : `<button class="btn btn-ghost btn-sm">Подробнее</button>`;
     return `<div class="card match">
       <div class="pct">${pct}</div>
       <div class="bd"><b>${name}</b>${urgencyBadge}<p>${desc}</p><div class="why">✦ ${why}</div>${missingLine}</div>
-      <button class="btn btn-ghost btn-sm">Подробнее</button></div>`;
+      ${actions}</div>`;
   }).join('');
 }
 // Строка на не подошедшую программу — переиспользует .row (тот же класс,
@@ -705,7 +756,10 @@ async function runSupport(){
           ? 'ИИ временно недоступен — обоснование не загрузилось'
           : 'Не удалось загрузить обоснование');
     const missing = res.status==='fulfilled' ? res.value.missing_documents : [];
-    return ['Подходит', p.program_name, p.reason, why, {missing}];
+    const canDraft = res.status==='fulfilled' && res.value.decision === 'propose_draft';
+    return ['Подходит', p.program_name, p.reason, why, {
+      missing, canDraft, programId: p.program_id, sourceUrl: p.source_url,
+    }];
   });
   o.innerHTML = `<div class="cat-h">Подошли ${eligible.length} из ${eligible.length + not_eligible.length} программ</div>`
     + cardsFor(rows) + notEligibleHTML(not_eligible);

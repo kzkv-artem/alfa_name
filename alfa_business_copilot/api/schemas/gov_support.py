@@ -8,6 +8,7 @@ class ProgramMatchOut(BaseModel):
     program_name: str
     is_eligible: bool
     reason: str
+    source_url: str
 
 
 class ProgramMatchListOut(BaseModel):
@@ -25,6 +26,7 @@ class ProgramAdviceOut(BaseModel):
     decision: str
     missing_documents: tuple[str, ...]
     explanation: str
+    source_url: str
 
 
 class DraftOut(BaseModel):
