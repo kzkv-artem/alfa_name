@@ -408,6 +408,38 @@ const SERVICES = [
   ['Альфа-Про','Развитие','Пакет сервисов одной подпиской','Пакетная цена','off',['ip','ooo']]
 ];
 
+// Реальные страницы alfabank.ru — найдены вручную поиском по каждому
+// продукту. Часть продуктов (Альфа-Таргет, Альфа-Логист, Альфа-Цели,
+// Пульс рынка, Альфа-Бухгалтерия, Нейроофис, Альфа-Диск, Лизинг, Закупки
+// из-за рубежа, Альфа-Командировки, Самоинкассация, Альфа-Про) — либо не
+// нашлись отдельной публичной страницей (например, Нейроофис доступен
+// только из личного кабинета банка), либо это не проверялось; для них —
+// общий раздел «Малый и средний бизнес», а не выдуманная ссылка.
+const SERVICE_HUB_URL = 'https://alfabank.ru/sme/';
+const SERVICE_URLS = {
+  'Эквайринг': 'https://alfabank.ru/sme/payservice/otraslevye-resheniya/',
+  'AlfaPOS': 'https://alfabank.ru/sme/payservice/alfapos/',
+  'AlfaCASH': 'https://alfabank.ru/sme/payservice/alfapos/alfacash-webview/',
+  'Alfa API': 'https://alfabank.ru/sme/alfaapi/',
+  'Альфа-Селлер': 'https://alfabank.ru/sme/abp/services/alfa_seller/',
+  'Налог для самозанятых': 'https://alfabank.ru/selfemployed/',
+  'Альфа-Безопасность': 'https://alfabank.ru/sme/abp/services/alfa_security/',
+  'Индикатор риска': 'https://alfabank.ru/sme/abp/services/riski/',
+  'Проверка контрагентов': 'https://alfabank.ru/help/t/corp/alfaforbusiness/alfa-bezopasnost/kakie-servisi-vkhodyat-v-podpisku/proverka-kontragentov/',
+  'Проверка сотрудников': 'https://alfabank.ru/sme/abp/services/employee/',
+  'Кредитная линия': 'https://alfabank.ru/sme/profits/creditline/',
+  'Овердрафт': 'https://alfabank.ru/sme/profits/partners/overdraft/',
+  'Микрокредит': 'https://alfabank.ru/sme/profits/kredit-dlya-ip/',
+  'Факторинг': 'https://alfabank.ru/corporate/credit/factoring/',
+  'Банковские гарантии': 'https://alfabank.ru/sme/guarantee/client/',
+  'Депозиты': 'https://alfabank.ru/sme/deposits/',
+  'Валютный контроль': 'https://alfabank.ru/sme/ved/',
+  'Зарплатный проект': 'https://alfabank.ru/sme/salaryproject_new/',
+  'Альфа-Курс': 'https://kurs.alfabank.ru/',
+  'Курс+': 'https://kurs.alfabank.ru/subscription/',
+};
+function serviceUrl(name){ return SERVICE_URLS[name] || SERVICE_HUB_URL; }
+
 const SUBS = [
   ['Альфа-Безопасность','Подключилась вместе с тарифом',702,true,true],
   ['Индикатор риска','Подключилась вместе с тарифом',995,true,true],
@@ -599,12 +631,12 @@ function renderServices(){
     html+=`<div class="cat-h">${c}</div><div class="grid">`;
     items.forEach(s=>{
       const [txt,cls]=labels[s[4]];
+      const label = s[4]==='off' ? 'Подключить' : 'Открыть';
       html+=`<div class="card svc">
         <div class="top"><div class="nm">${s[0]}</div>${txt?`<span class="st ${cls}">${txt}</span>`:''}</div>
         <div class="ds">${s[2]}</div>
         <div class="bt"><span class="pr">${s[3]}</span>
-        ${s[4]==='off'?'<button class="btn btn-ghost btn-sm">Подключить</button>':
-          '<button class="btn btn-ghost btn-sm">Открыть</button>'}</div></div>`;
+        <a class="btn btn-ghost btn-sm" href="${serviceUrl(s[0])}" target="_blank" rel="noopener">${label}</a></div></div>`;
     });
     html+='</div>';
   });
