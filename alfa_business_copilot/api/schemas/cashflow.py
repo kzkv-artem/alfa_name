@@ -27,3 +27,20 @@ class CashflowDecisionOut(BaseModel):
 
 class ExplainOut(BaseModel):
     explanation: str
+
+
+class BalancePointOut(BaseModel):
+    date: date
+    balance: float
+
+
+class CounterpartyOut(BaseModel):
+    counterparty: str
+    amount: float
+
+
+class CashflowChartsOut(BaseModel):
+    balance_series: list[BalancePointOut]
+    inbound_total: float
+    outbound_total: float
+    top_counterparties: list[CounterpartyOut]

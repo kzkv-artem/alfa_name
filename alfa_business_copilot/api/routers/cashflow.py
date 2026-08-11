@@ -7,9 +7,10 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from alfa_agent.cashflow import CashflowAgent, history_depth_days, run_forecast, save_forecast
 from alfa_agent.cashflow.agent import MIN_CONFIDENCE_TO_ALERT
+from alfa_agent.cashflow.charts import balance_series, flow_summary, top_counterparties
 
 from api.deps import get_cashflow_agent, get_cashflow_conn, get_cashflow_model
-from api.schemas.cashflow import CashflowDecisionOut, ClientOut, ExplainOut
+from api.schemas.cashflow import CashflowChartsOut, CashflowDecisionOut, ClientOut, ExplainOut
 
 router = APIRouter(prefix="/cashflow", tags=["cashflow"])
 
@@ -51,6 +52,19 @@ def get_decision(
         "alert_threshold": MIN_CONFIDENCE_TO_ALERT,
     }
     return CashflowDecisionOut.model_validate(payload)
+
+
+@router.get("/clients/{client_id}/charts", response_model=CashflowChartsOut)
+def get_charts(
+    client_id: str,
+    conn: sqlite3.Connection = Depends(get_cashflow_conn),
+) -> CashflowChartsOut:
+    _client, account = _get_client_account(conn, client_id)
+    return CashflowChartsOut(
+        balance_series=balance_series(conn, account["account_id"]),
+        top_counterparties=top_counterparties(conn, account["account_id"]),
+        **flow_summary(conn, account["account_id"]),
+    )
 
 
 @router.post("/clients/{client_id}/explain", response_model=ExplainOut)

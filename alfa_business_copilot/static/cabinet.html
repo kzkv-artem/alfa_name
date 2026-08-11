@@ -73,6 +73,26 @@
   .kv{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 17px}
   .kv .k{font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
   .kv .v{font-size:14.5px;font-weight:600;line-height:1.4;letter-spacing:-.1px}
+
+  .chart-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+  .chart-card h3{font-size:13.5px;font-weight:700;letter-spacing:-.1px}
+  .chart-card .chart-sub{font-size:12px;color:var(--muted);margin:3px 0 14px}
+  .chart-2col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  @media (max-width:720px){.chart-2col{grid-template-columns:1fr}}
+
+  .bar-row{display:flex;align-items:center;gap:10px;padding:6px 0}
+  .bar-label{font-size:12.5px;width:132px;flex:0 0 132px;overflow:hidden;text-overflow:ellipsis;
+    white-space:nowrap;color:var(--ink-2)}
+  .bar-track{flex:1;height:10px;background:var(--chip);border-radius:5px;overflow:hidden}
+  .bar-fill{height:100%;background:var(--ink-2);border-radius:5px}
+  .bar-value{font-size:12px;font-weight:600;width:88px;flex:0 0 88px;text-align:right;
+    font-variant-numeric:tabular-nums}
+
+  .donut-legend{display:flex;flex-direction:column;gap:10px}
+  .donut-legend .item{display:flex;align-items:center;gap:8px;font-size:12.5px;white-space:nowrap}
+  .donut-legend .dot{width:10px;height:10px;border-radius:50%;flex:0 0 10px}
+  .donut-legend .val{margin-left:10px;font-weight:600;font-variant-numeric:tabular-nums}
+
   .svc{padding:16px;display:flex;flex-direction:column;gap:8px}
   .svc .top{display:flex;align-items:flex-start;gap:10px}
   .svc .nm{font-weight:600;font-size:14px;flex:1}
@@ -305,6 +325,28 @@
         <div class="alert alert-ai" style="margin-top:18px">
           <span class="mk">ИИ</span>
           <div><b id="cg-alert-title">Загрузка…</b><span id="cg-alert-body"></span></div>
+        </div>
+
+        <div class="chart-card" style="margin-top:18px">
+          <h3>Динамика баланса</h3>
+          <div class="chart-sub">Реконструкция по операциям счёта, последние 60 дней</div>
+          <div id="cg-balance-chart"></div>
+        </div>
+
+        <div class="chart-2col">
+          <div class="chart-card">
+            <h3>Приход и расход</h3>
+            <div class="chart-sub">Сумма операций за всю доступную историю</div>
+            <div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap">
+              <div id="cg-donut"></div>
+              <div class="donut-legend" id="cg-donut-legend"></div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h3>Куда уходят деньги</h3>
+            <div class="chart-sub">Топ получателей по сумме списаний</div>
+            <div id="cg-bars"></div>
+          </div>
         </div>
       </section>
 
@@ -844,6 +886,77 @@ async function runIns(){
   o.innerHTML = `<div class="cat-h">Рекомендуем ${rows.length} покрыти${rows.length===1?'е':'я'}</div>` + cardsFor(rows);
 }
 
+// Линия баланса — единственная серия, поэтому без легенды (её и не должно
+// быть для одного ряда) и без выдуманной оси Y: подписаны только первая и
+// последняя точки плюс сам последний баланс текстом. Нулевая линия
+// пунктиром появляется, только если баланс где-то уходит в минус —
+// это и есть визуальный смысл «кассового разрыва».
+function buildLineChart(points){
+  if(!points.length) return '<p style="color:var(--muted);font-size:12.5px">Недостаточно операций для графика</p>';
+  const W=680,H=170,padL=10,padR=10,padT=16,padB=22;
+  const vals = points.map(p=>p.balance);
+  const min = Math.min(0, ...vals), max = Math.max(...vals);
+  const range = (max-min)||1;
+  const x = i => padL + (W-padL-padR) * (points.length===1 ? 0.5 : i/(points.length-1));
+  const y = v => padT + (H-padT-padB) * (1 - (v-min)/range);
+  const path = points.map((p,i)=>`${i===0?'M':'L'}${x(i).toFixed(1)},${y(p.balance).toFixed(1)}`).join(' ');
+  const areaPath = `${path} L${x(points.length-1).toFixed(1)},${y(min).toFixed(1)} L${x(0).toFixed(1)},${y(min).toFixed(1)} Z`;
+  const dots = points.map((p,i)=>
+    `<circle cx="${x(i).toFixed(1)}" cy="${y(p.balance).toFixed(1)}" r="2.5" fill="var(--red)">`
+    + `<title>${formatDateRu(p.date)}: ${Math.round(p.balance).toLocaleString('ru-RU')} ₽</title></circle>`
+  ).join('');
+  const lastVal = Math.round(points[points.length-1].balance).toLocaleString('ru-RU');
+  const lastX = x(points.length-1), lastY = y(points[points.length-1].balance);
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px;display:block" role="img" aria-label="Динамика баланса">
+    ${min<0 ? `<line x1="${padL}" y1="${y(0).toFixed(1)}" x2="${W-padR}" y2="${y(0).toFixed(1)}" stroke="var(--line)" stroke-dasharray="3,3"/>` : ''}
+    <path d="${areaPath}" fill="var(--red)" opacity="0.07" stroke="none"/>
+    <path d="${path}" fill="none" stroke="var(--red)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots}
+    <text x="${padL}" y="${H-6}" font-size="10" fill="var(--muted)">${formatDateRu(points[0].date)}</text>
+    <text x="${W-padR}" y="${H-6}" font-size="10" fill="var(--muted)" text-anchor="end">${formatDateRu(points[points.length-1].date)}</text>
+    <text x="${Math.min(lastX,W-padR-4).toFixed(1)}" y="${Math.max(lastY-9,12).toFixed(1)}" font-size="11.5" font-weight="700" fill="var(--ink)" text-anchor="end">${lastVal} ₽</text>
+  </svg>`;
+}
+
+// Донат на 2 сегмента (приход/расход) — цвета выбраны сознательно НЕ
+// зелёный/красный (классическая проблемная пара для дальтоников), а
+// синий/красный, плюс сумма и процент подписаны текстом рядом с точкой
+// цвета в легенде — идентичность не только через цвет.
+function buildDonut(inbound, outbound){
+  const total = inbound + outbound;
+  if(!total) return '<p style="color:var(--muted);font-size:12.5px">Нет операций</p>';
+  const r=48, cx=60, cy=60, stroke=15, circumference=2*Math.PI*r;
+  const inboundLen = circumference*(inbound/total);
+  return `<svg viewBox="0 0 120 120" style="width:120px;height:120px;flex:0 0 120px">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--line)" stroke-width="${stroke}"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--red)" stroke-width="${stroke}"
+      stroke-dasharray="${circumference.toFixed(1)} ${circumference.toFixed(1)}" transform="rotate(-90 ${cx} ${cy})"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#1F5EDB" stroke-width="${stroke}"
+      stroke-dasharray="${inboundLen.toFixed(1)} ${circumference.toFixed(1)}" transform="rotate(-90 ${cx} ${cy})"/>
+  </svg>`;
+}
+
+function renderCashCharts(data){
+  document.getElementById('cg-balance-chart').innerHTML = buildLineChart(data.balance_series);
+
+  const total = data.inbound_total + data.outbound_total;
+  const pct = v => total ? Math.round(v/total*100) : 0;
+  document.getElementById('cg-donut').innerHTML = buildDonut(data.inbound_total, data.outbound_total);
+  document.getElementById('cg-donut-legend').innerHTML = `
+    <div class="item"><span class="dot" style="background:#1F5EDB"></span>Приход<span class="val">${Math.round(data.inbound_total).toLocaleString('ru-RU')} ₽ · ${pct(data.inbound_total)}%</span></div>
+    <div class="item"><span class="dot" style="background:var(--red)"></span>Расход<span class="val">${Math.round(data.outbound_total).toLocaleString('ru-RU')} ₽ · ${pct(data.outbound_total)}%</span></div>`;
+
+  const maxAmt = Math.max(1, ...data.top_counterparties.map(c=>c.amount));
+  document.getElementById('cg-bars').innerHTML = data.top_counterparties.length
+    ? data.top_counterparties.map(c=>`
+        <div class="bar-row">
+          <div class="bar-label" title="${c.counterparty}">${c.counterparty}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.round(c.amount/maxAmt*100)}%"></div></div>
+          <div class="bar-value">${Math.round(c.amount).toLocaleString('ru-RU')} ₽</div>
+        </div>`).join('')
+    : '<p style="color:var(--muted);font-size:12.5px">Нет расходных операций</p>';
+}
+
 // GET /cashflow/clients/client_1/decision. gap_date/gap_amount/recommended_product —
 // детерминированные поля (CatBoost + naive-прогноз), но если alert=true, сам
 // эндпоинт всё равно попутно зовёт LLM за текстом message — и может вернуть
@@ -893,6 +1006,15 @@ async function loadCashGap(){
       <div class="kv"><div class="k">Не хватит примерно</div><div class="v">${amount} ₽</div></div>`;
   }
   stats.innerHTML = tiles;
+
+  // Графики — не про прогноз, а про историю операций, поэтому грузим их
+  // независимо от того, есть alert или нет, и до ранних return ниже.
+  try{
+    renderCashCharts(await apiFetch('/cashflow/clients/client_1/charts'));
+  }catch(err){
+    document.getElementById('cg-balance-chart').innerHTML =
+      `<p style="color:var(--muted);font-size:12.5px">Не удалось загрузить графики${err&&err.message?': '+err.message:''}</p>`;
+  }
 
   if(!d.alert){
     title.textContent='Кассовых разрывов не ожидается';
