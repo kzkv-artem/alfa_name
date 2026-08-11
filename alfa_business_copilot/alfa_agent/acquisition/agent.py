@@ -133,6 +133,7 @@ class RiskAdvisorAgent:
     def _ask_clarifying(self, state: RiskChatState, missing: list[str], user_message: str) -> str:
         system, user = render(
             "risk_clarifying_question",
+            industries=industries_for_prompt(),
             known_industry=_display_name(state.industry_code, get_industry),
             known_region=_display_name(state.region_code, get_region),
             missing=", ".join(missing),
