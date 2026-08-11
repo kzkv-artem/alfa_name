@@ -68,6 +68,11 @@
   .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
 
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:14px}
+
+  .kv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+  .kv{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px 17px}
+  .kv .k{font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .kv .v{font-size:14.5px;font-weight:600;line-height:1.4;letter-spacing:-.1px}
   .svc{padding:16px;display:flex;flex-direction:column;gap:8px}
   .svc .top{display:flex;align-items:flex-start;gap:10px}
   .svc .nm{font-weight:600;font-size:14px;flex:1}
@@ -194,17 +199,19 @@
     <div class="content">
 
       <!-- ===== ВСЕ СЕРВИСЫ ===== -->
-      <section id="v-services">
+      <section id="v-services" class="hidden">
         <h1>Все сервисы</h1>
         <p class="sub" id="svc-sub">Показываем то, что подходит вашему бизнесу</p>
 
-        <div class="card" style="margin-bottom:18px">
-          <div class="cat-h" style="margin:16px 18px 8px">Реквизиты</div>
-          <div id="profile-body"></div>
-        </div>
-
         <div class="chips" id="cat-chips"></div>
         <div id="svc-list"></div>
+      </section>
+
+      <!-- ===== ЛИЧНЫЙ КАБИНЕТ ===== -->
+      <section id="v-profile">
+        <h1>Личный кабинет</h1>
+        <p class="sub" id="profile-sub">Реквизиты и данные регистрации</p>
+        <div class="kv-grid" id="profile-grid"></div>
       </section>
 
       <!-- ===== ПОДПИСКИ ===== -->
@@ -327,12 +334,16 @@
 <script>
 const MENUS = {
   self:{org:'Ирина Соколова',person:'Самозанятая',items:[
+    ['profile','⌂','Личный кабинет','profile'],
+    ['sep'],
     ['money','◎','Деньги','stub'],['checks','▤','Чеки и налог','stub'],['clients','⚇','Клиенты','stub'],
     ['sep'],
     ['risk','⚓','Альфа Штурман','risk','ai'],['ins','⛨','Страхование','insurance','ai'],['sup','★','Господдержка','support','ai'],
     ['sep'],
     ['svc','▦','Все сервисы','services'],['subs','♺','Мои подписки','subs']]},
   ip:{org:'ИП Соколова И. В.',person:'Соколова И. В.',items:[
+    ['profile','⌂','Личный кабинет','profile'],
+    ['sep'],
     ['pay','＋','Счета и платежи','stub'],['stmt','▤','Выписка','stub'],['cards','▭','Карты','stub'],
     ['cred','％','Кредиты','credit'],
     ['sep'],
@@ -340,6 +351,8 @@ const MENUS = {
     ['sep'],
     ['svc','▦','Все сервисы','services'],['subs','♺','Мои подписки','subs']]},
   ooo:{org:'ООО «ФИНМАРКЕТ»',person:'Дьяков М. Х.',items:[
+    ['profile','⌂','Личный кабинет','profile'],
+    ['sep'],
     ['pay','＋','Счета и платежи','stub'],['stmt','▤','Выписка','stub'],
     ['contr','⚇','Контрагенты','stub'],['cred','％','Кредиты','credit'],
     ['sal','▧','Зарплатный проект','stub'],
@@ -852,12 +865,12 @@ const PROFILE = {
   ],
 };
 function renderProfile(){
-  document.getElementById('profile-body').innerHTML = PROFILE[seg].map(([nm,val])=>
-    `<div class="row"><div class="nm">${nm}</div><div class="amt">${val}</div></div>`).join('');
+  document.getElementById('profile-grid').innerHTML = PROFILE[seg].map(([k,v])=>
+    `<div class="kv"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
 }
 
-const VIEWS=['services','subs','risk','support','insurance','credit','stub'];
-let current='services';
+const VIEWS=['services','subs','profile','risk','support','insurance','credit','stub'];
+let current='profile';
 function go(v,label){
   current=v;
   VIEWS.forEach(x=>document.getElementById('v-'+x).classList.toggle('hidden',x!==v));
