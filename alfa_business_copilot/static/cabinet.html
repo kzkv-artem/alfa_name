@@ -29,7 +29,10 @@
     color:var(--ink-2);font-size:13.5px;text-align:left;transition:background .12s}
   .nav-item:hover{background:#F5F6F8}
   .nav-item.active{background:#F5F6F8;color:var(--ink);font-weight:600}
-  .nav-item .ico{width:18px;flex:0 0 18px;opacity:.75;font-size:14px;text-align:center}
+  .nav-item .ico{width:18px;flex:0 0 18px;opacity:.75;display:flex;align-items:center;justify-content:center}
+  .nav-item .ico svg,.search svg,.icon-btn svg{width:16px;height:16px;display:block}
+  .fab-btn svg{width:20px;height:20px;display:block}
+  .why-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#6D28D9;margin-right:2px}
   .badge-new{margin-left:auto;font-size:9px;font-weight:700;letter-spacing:.4px;background:#E8F0FE;
     color:#1F5EDB;padding:2px 5px;border-radius:4px}
   .badge-ai{margin-left:auto;font-size:9px;font-weight:700;letter-spacing:.4px;background:#EDE9FE;
@@ -165,7 +168,8 @@
 
   .empty{padding:52px 20px;text-align:center}
   .empty .box{width:44px;height:44px;border-radius:12px;background:#F2F3F5;margin:0 auto 14px;
-    display:grid;place-items:center;font-size:18px}
+    display:grid;place-items:center;color:var(--muted)}
+  .empty .box svg{width:20px;height:20px}
   .empty b{display:block;font-size:14px;margin-bottom:4px}
   .empty p{color:var(--muted);font-size:13px;margin-bottom:16px}
 
@@ -201,18 +205,30 @@
   <aside class="sidebar">
     <div class="brand"><div class="mark">A</div><div class="name">Альфа-Бизнес</div></div>
     <nav class="nav" id="nav"></nav>
-    <div class="sidebar-foot">⚙ Настроить меню</div>
+    <div class="sidebar-foot" style="display:flex;align-items:center;gap:7px">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;flex:0 0 14px">
+        <circle cx="10" cy="10" r="2.5"/><path d="M10 3v2M10 15v2M17 10h-2M5 10H3M14.9 5.1l-1.4 1.4M6.5 13.5l-1.4 1.4M14.9 14.9l-1.4-1.4M6.5 6.5L5.1 5.1"/>
+      </svg>
+      Настроить меню
+    </div>
   </aside>
 
   <div class="main">
     <header class="topbar">
-      <div class="search">🔍 Поиск</div>
+      <div class="search">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M16.5 16.5l-4-4"/></svg>
+        Поиск
+      </div>
       <div class="segsw" id="segsw">
         <button data-s="self" onclick="setSeg('self')">Самозанятый</button>
         <button data-s="ip" class="on" onclick="setSeg('ip')">ИП</button>
         <button data-s="ooo" onclick="setSeg('ooo')">ООО</button>
       </div>
-      <button class="icon-btn">🔔</button>
+      <button class="icon-btn">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 8a5 5 0 0 1 10 0c0 4 1.5 5 1.5 5h-13S5 12 5 8z"/><path d="M8.5 16a1.5 1.5 0 0 0 3 0"/>
+        </svg>
+      </button>
       <div class="org"><b id="org-name">ИП Соколова И. В.</b><span id="org-person">Соколова И. В.</span></div>
     </header>
 
@@ -353,7 +369,7 @@
       <!-- ===== ЗАГЛУШКА ===== -->
       <section id="v-stub" class="hidden">
         <h1 id="stub-title">Раздел</h1>
-        <div class="card empty"><div class="box">▤</div>
+        <div class="card empty"><div class="box"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l2-6a1 1 0 0 1 1-.7h8a1 1 0 0 1 1 .7l2 6"/><path d="M3 11v4a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4"/><path d="M3 11h4l1 2h4l1-2h4"/></svg></div>
           <b>В макете этот раздел не собран</b>
           <p>Здесь показываем уровень 1 и уровень 3: ядро меню, каталог, подписки и ИИ-подбор</p>
           <button class="btn btn-primary" onclick="go('services')">К каталогу сервисов</button></div>
@@ -366,42 +382,67 @@
 <div class="fab">
   <div class="panel hidden" id="panel">
     <div class="ph"><div class="ai-dot">ИИ</div><b style="flex:1">Нейроофис</b>
-      <button class="icon-btn" onclick="togglePanel()">✕</button></div>
+      <button class="icon-btn" onclick="togglePanel()">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
+      </button></div>
     <div class="pb" id="panel-body"></div>
   </div>
-  <button class="fab-btn" onclick="togglePanel()">✦</button>
+  <button class="fab-btn" onclick="togglePanel()">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2l1.6 5.4L17 9l-5.4 1.6L10 16l-1.6-5.4L3 9l5.4-1.6z"/></svg>
+  </button>
 </div>
 
 <script>
+// Иконки меню — inline SVG, не текстовые Unicode-символы: на части систем
+// такие символы подхватываются цветным emoji-шрифтом вместо чёрно-белого
+// текстового, выглядит непоследовательно. currentColor — цвет наследуется
+// от .ico, сама SVG-разметка ни от чего не зависит и не тянет внешних файлов.
+const ICONS = {
+  home: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 10 3l7 6.5"/><path d="M5 8.5V17h10V8.5"/><path d="M8 17v-5h4v5"/></svg>',
+  wave: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11l3-6 3 9 3-11 3 8 4-5"/></svg>',
+  wallet: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6a2 2 0 0 1 2-2h10a1 1 0 0 1 1 1v2"/><path d="M3 6v9a2 2 0 0 0 2 2h11a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2z"/><circle cx="14" cy="12" r="1.2"/></svg>',
+  receipt: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 2h10v16l-2-1.3L11 18l-1.5-1.3L8 18l-1.5-1.3L5 18V2z"/><path d="M7.5 6.5h5M7.5 9.5h5M7.5 12.5h3"/></svg>',
+  users: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="6.5" r="2.5"/><path d="M2.5 17c0-3 2.2-5 5-5s5 2 5 5"/><circle cx="14.5" cy="7.5" r="2"/><path d="M12.7 12.3c2.2.3 3.8 2 3.8 4.7"/></svg>',
+  anchor: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="4" r="1.6"/><path d="M10 6v11"/><path d="M4 11a6 6 0 0 0 12 0"/><path d="M6.5 11h-3M16.5 11h-3"/></svg>',
+  shield: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l6.5 2.5v5c0 4.5-3 7-6.5 8-3.5-1-6.5-3.5-6.5-8v-5L10 2.5z"/></svg>',
+  star: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M10 2.5l2.2 4.6 5 .7-3.6 3.6.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.6 5-.7z"/></svg>',
+  grid: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg>',
+  refresh: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 6.5A6.5 6.5 0 0 0 5 5"/><path d="M4 3.5v3h3"/><path d="M4 13.5a6.5 6.5 0 0 0 11 1.5"/><path d="M16 16.5v-3h-3"/></svg>',
+  'plus-doc': '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M10 7v6M7 10h6"/></svg>',
+  card: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="15" height="11" rx="1.5"/><path d="M2.5 8h15"/><path d="M5.5 12h3"/></svg>',
+  percent: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M15 5L5 15"/><circle cx="6.5" cy="6.5" r="1.7"/><circle cx="13.5" cy="13.5" r="1.7"/></svg>',
+  team: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="12" height="14" rx="2"/><circle cx="10" cy="8" r="2"/><path d="M6.5 14c0-2 1.5-3 3.5-3s3.5 1 3.5 3"/></svg>',
+};
+
 const MENUS = {
   self:{org:'Ирина Соколова',person:'Самозанятая',items:[
-    ['profile','⌂','Личный кабинет','profile'],
+    ['profile','home','Личный кабинет','profile'],
     ['sep'],
-    ['money','◎','Деньги','stub'],['cashgap','∿','Кассовый разрыв','cashgap','ai'],
-    ['checks','▤','Чеки и налог','stub'],['clients','⚇','Клиенты','stub'],
+    ['money','wallet','Деньги','stub'],['cashgap','wave','Кассовый разрыв','cashgap','ai'],
+    ['checks','receipt','Чеки и налог','stub'],['clients','users','Клиенты','stub'],
     ['sep'],
-    ['risk','⚓','Альфа Штурман','risk','ai'],['ins','⛨','Страхование','insurance','ai'],['sup','★','Господдержка','support','ai'],
+    ['risk','anchor','Альфа Штурман','risk','ai'],['ins','shield','Страхование','insurance','ai'],['sup','star','Господдержка','support','ai'],
     ['sep'],
-    ['svc','▦','Все сервисы','services'],['subs','♺','Мои подписки','subs']]},
+    ['svc','grid','Все сервисы','services'],['subs','refresh','Мои подписки','subs']]},
   ip:{org:'ИП Соколова И. В.',person:'Соколова И. В.',items:[
-    ['profile','⌂','Личный кабинет','profile'],
+    ['profile','home','Личный кабинет','profile'],
     ['sep'],
-    ['pay','＋','Счета и платежи','stub'],['stmt','▤','Выписка','stub'],['cards','▭','Карты','stub'],
-    ['cashgap','∿','Кассовый разрыв','cashgap','ai'],['cred','％','Кредиты','credit'],
+    ['pay','plus-doc','Счета и платежи','stub'],['stmt','receipt','Выписка','stub'],['cards','card','Карты','stub'],
+    ['cashgap','wave','Кассовый разрыв','cashgap','ai'],['cred','percent','Кредиты','credit'],
     ['sep'],
-    ['risk','⚓','Альфа Штурман','risk','ai'],['ins','⛨','Страхование','insurance','ai'],['sup','★','Господдержка','support','ai'],
+    ['risk','anchor','Альфа Штурман','risk','ai'],['ins','shield','Страхование','insurance','ai'],['sup','star','Господдержка','support','ai'],
     ['sep'],
-    ['svc','▦','Все сервисы','services'],['subs','♺','Мои подписки','subs']]},
+    ['svc','grid','Все сервисы','services'],['subs','refresh','Мои подписки','subs']]},
   ooo:{org:'ООО «ФИНМАРКЕТ»',person:'Дьяков М. Х.',items:[
-    ['profile','⌂','Личный кабинет','profile'],
+    ['profile','home','Личный кабинет','profile'],
     ['sep'],
-    ['pay','＋','Счета и платежи','stub'],['stmt','▤','Выписка','stub'],
-    ['contr','⚇','Контрагенты','stub'],['cashgap','∿','Кассовый разрыв','cashgap','ai'],['cred','％','Кредиты','credit'],
-    ['sal','▧','Зарплатный проект','stub'],
+    ['pay','plus-doc','Счета и платежи','stub'],['stmt','receipt','Выписка','stub'],
+    ['contr','users','Контрагенты','stub'],['cashgap','wave','Кассовый разрыв','cashgap','ai'],['cred','percent','Кредиты','credit'],
+    ['sal','team','Зарплатный проект','stub'],
     ['sep'],
-    ['risk','⚓','Альфа Штурман','risk','ai'],['ins','⛨','Страхование','insurance','ai'],['sup','★','Господдержка','support','ai'],
+    ['risk','anchor','Альфа Штурман','risk','ai'],['ins','shield','Страхование','insurance','ai'],['sup','star','Господдержка','support','ai'],
     ['sep'],
-    ['svc','▦','Все сервисы','services'],['subs','♺','Мои подписки','subs']]}
+    ['svc','grid','Все сервисы','services'],['subs','refresh','Мои подписки','subs']]}
 };
 
 const CATS = ['Деньги и расчёты','Продажи и клиенты','Учёт и налоги','Безопасность','Финансирование','ВЭД','Люди','Развитие'];
@@ -649,7 +690,7 @@ function renderNav(){
     if(it[0]==='sep') return '<div class="nav-sep"></div>';
     const badge = it[4]==='ai' ? '<span class="badge-ai">ИИ</span>' : '';
     return `<button class="nav-item" data-v="${it[3]}" data-label="${it[2]}" onclick="go('${it[3]}','${it[2]}')">
-      <span class="ico">${it[1]}</span>${it[2]}${badge}</button>`;
+      <span class="ico">${ICONS[it[1]]||''}</span>${it[2]}${badge}</button>`;
   }).join('');
   markNav(current);
 }
@@ -684,7 +725,7 @@ function renderServices(){
   });
   const total=SERVICES.filter(s=>s[5].includes(seg)).length;
   document.getElementById('svc-sub').textContent = `Показываем ${total} сервисов, подходящих вашему бизнесу. Всего в банке больше 60`;
-  document.getElementById('svc-list').innerHTML=html||'<div class="card empty"><div class="box">▤</div><b>В этой категории пока пусто</b><p>Для вашего сегмента здесь ничего нет</p></div>';
+  document.getElementById('svc-list').innerHTML=html||'<div class="card empty"><div class="box"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l2-6a1 1 0 0 1 1-.7h8a1 1 0 0 1 1 .7l2 6"/><path d="M3 11v4a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4"/><path d="M3 11h4l1 2h4l1-2h4"/></svg></div><b>В этой категории пока пусто</b><p>Для вашего сегмента здесь ничего нет</p></div>';
 }
 
 let subState=SUBS.map(s=>s[3]);
@@ -778,7 +819,7 @@ function cardsFor(rows){
       : `<button class="btn btn-ghost btn-sm">Подробнее</button>`;
     return `<div class="card match">
       <div class="pct">${pct}</div>
-      <div class="bd"><b>${name}</b>${urgencyBadge}<p>${desc}</p><div class="why">✦ ${why}</div>${missingLine}</div>
+      <div class="bd"><b>${name}</b>${urgencyBadge}<p>${desc}</p><div class="why"><span class="why-dot"></span>${why}</div>${missingLine}</div>
       ${actions}</div>`;
   }).join('');
 }
@@ -814,7 +855,7 @@ async function runSupport(){
   const description = [document.getElementById('sup-text').value.trim(), activeChip ? activeChip.textContent : '']
     .filter(Boolean).join(', ');
   if(!description){
-    o.innerHTML = '<div class="card empty"><div class="box">▤</div><b>Опишите бизнес</b>'
+    o.innerHTML = '<div class="card empty"><div class="box"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l2-6a1 1 0 0 1 1-.7h8a1 1 0 0 1 1 .7l2 6"/><path d="M3 11v4a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4"/><path d="M3 11h4l1 2h4l1-2h4"/></svg></div><b>Опишите бизнес</b>'
       + '<p>Расскажите в паре предложений, чем занимаетесь, — агент сверит с реестром программ</p></div>';
     return;
   }
@@ -826,7 +867,7 @@ async function runSupport(){
 
   const {eligible, not_eligible} = data;
   if(!eligible.length){
-    o.innerHTML = `<div class="card empty"><div class="box">▤</div><b>Подходящих программ не нашлось</b>`
+    o.innerHTML = `<div class="card empty"><div class="box"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l2-6a1 1 0 0 1 1-.7h8a1 1 0 0 1 1 .7l2 6"/><path d="M3 11v4a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4"/><path d="M3 11h4l1 2h4l1-2h4"/></svg></div><b>Подходящих программ не нашлось</b>`
       + `<p>Ни одна из ${eligible.length + not_eligible.length} проверенных программ не подошла по текущим критериям</p></div>`
       + notEligibleHTML(not_eligible);
     return;
@@ -864,14 +905,14 @@ async function runIns(){
   catch(err){ o.innerHTML = apiErrorHTML(err); return }
 
   const target = clients.find(c=>c.legal_form!=='самозанятый') || clients[0];
-  if(!target){ o.innerHTML='<div class="card empty"><div class="box">⛨</div><b>Нет данных о клиентах</b></div>'; return }
+  if(!target){ o.innerHTML='<div class="card empty"><div class="box"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l2-6a1 1 0 0 1 1-.7h8a1 1 0 0 1 1 .7l2 6"/><path d="M3 11v4a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4"/><path d="M3 11h4l1 2h4l1-2h4"/></svg></div><b>Нет данных о клиентах</b></div>'; return }
 
   let data;
   try{ data = await apiFetch(`/insurance/clients/${target.client_id}/recommendation`) }
   catch(err){ o.innerHTML = apiErrorHTML(err); return }
 
   if(data.reply===null){
-    o.innerHTML = `<div class="card empty"><div class="box">⛨</div><b>Подходящих продуктов не нашлось</b>`
+    o.innerHTML = `<div class="card empty"><div class="box"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l2-6a1 1 0 0 1 1-.7h8a1 1 0 0 1 1 .7l2 6"/><path d="M3 11v4a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4"/><path d="M3 11h4l1 2h4l1-2h4"/></svg></div><b>Подходящих продуктов не нашлось</b>`
       + `<p>${data.assessment.no_offer_reason || 'Агент не увидел рисков, которые стоит закрывать прямо сейчас'}</p></div>`;
     return;
   }
