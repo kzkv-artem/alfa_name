@@ -187,10 +187,6 @@
         <button data-s="ip" class="on" onclick="setSeg('ip')">ИП</button>
         <button data-s="ooo" onclick="setSeg('ooo')">ООО</button>
       </div>
-      <div class="segsw" id="stagesw">
-        <button data-st="first" class="on" onclick="setStage('first')">Первый бизнес</button>
-        <button data-st="active" onclick="setStage('active')">Уже работаю</button>
-      </div>
       <button class="icon-btn">🔔</button>
       <div class="org"><b id="org-name">ИП Соколова И. В.</b><span id="org-person">Соколова И. В.</span></div>
     </header>
@@ -201,6 +197,14 @@
       <section id="v-services">
         <h1>Все сервисы</h1>
         <p class="sub" id="svc-sub">Показываем то, что подходит вашему бизнесу</p>
+
+        <div class="card" style="padding:18px 20px;margin-bottom:18px">
+          <details id="docs-details">
+            <summary style="cursor:pointer;font-weight:600;font-size:14px">Что понадобится для оформления</summary>
+            <div id="docs-body" style="margin-top:14px"></div>
+          </details>
+        </div>
+
         <div class="chips" id="cat-chips"></div>
         <div id="svc-list"></div>
       </section>
@@ -348,9 +352,6 @@ const MENUS = {
 };
 
 const CATS = ['Деньги и расчёты','Продажи и клиенты','Учёт и налоги','Безопасность','Финансирование','ВЭД','Люди','Развитие'];
-// Вторая ось (независимая от сегмента): каталог для «Первого бизнеса»
-// сокращается до этих двух категорий — самое необходимое на старте.
-const BASIC_CATEGORIES = ['Деньги и расчёты','Учёт и налоги'];
 
 const SERVICES = [
   ['Эквайринг','Деньги и расчёты','Приём карт и СБП в зале и онлайн','от 1,2% с оборота','off',['ip','ooo','self']],
@@ -553,37 +554,13 @@ const REASON_TEXT_RU = {
   RENEWAL_WINDOW:'срок вашей прошлой страховки подходит к концу',
 };
 
-let seg='ip', stage='first', cat='Все', catOpen='Все';
-
-// Вторая ось — этап бизнеса, независим от сегмента (self/ip/ooo), меняет
-// только порядок/состав меню и подсказок, сам список сегментов не трогает.
-// «Кредиты»/«Пульс рынка» для «первого бизнеса» не поднимаются искусственно
-// туда, где их и так нет (например, у self нет пункта «Кредиты» вообще) —
-// byKey просто не находит такой пункт и пропускает его.
-const STAGE_PRIORITY = { first:['risk','sup','edu'], active:['cred','pulse'] };
-// Пункты, которых нет в MENUS ни у одного сегмента, но которые должна уметь
-// поднять вторая ось — ведут на общую заглушку 'stub', как и другие ещё не
-// собранные разделы (см. секцию v-stub).
-const EXTRA_NAV_ITEMS = {
-  edu: ['edu','✎','Обучение','stub'],
-  pulse: ['pulse','∿','Пульс рынка','stub'],
-};
-
-function orderedItems(seg, stage){
-  const all = MENUS[seg].items.filter(it=>it[0]!=='sep');
-  const priority = STAGE_PRIORITY[stage] || [];
-  const byKey = k => all.find(it=>it[0]===k) || EXTRA_NAV_ITEMS[k];
-  const top = priority.map(byKey).filter(Boolean);
-  const topKeys = new Set(top.map(it=>it[0]));
-  const rest = all.filter(it=>!topKeys.has(it[0]));
-  return top.length ? [...top, ['sep'], ...rest] : rest;
-}
+let seg='ip', cat='Все', catOpen='Все';
 
 function renderNav(){
   const m=MENUS[seg];
   document.getElementById('org-name').textContent=m.org;
   document.getElementById('org-person').textContent=m.person;
-  document.getElementById('nav').innerHTML=orderedItems(seg,stage).map(it=>{
+  document.getElementById('nav').innerHTML=MENUS[seg].items.map(it=>{
     if(it[0]==='sep') return '<div class="nav-sep"></div>';
     const badge = it[4]==='ai' ? '<span class="badge-ai">ИИ</span>' : '';
     return `<button class="nav-item" data-v="${it[3]}" data-label="${it[2]}" onclick="go('${it[3]}','${it[2]}')">
@@ -593,20 +570,18 @@ function renderNav(){
 }
 
 function renderChips(){
-  const baseCats = stage==='first' ? BASIC_CATEGORIES : CATS;
-  const list=['Все',...baseCats];
+  const list=['Все',...CATS];
   document.getElementById('cat-chips').innerHTML=list.map(c=>
     `<button class="chip ${c===cat?'on':''}" onclick="setCat('${c}')">${c}</button>`).join('');
 }
 function setCat(c){cat=c;renderChips();renderServices()}
 
 function renderServices(){
-  const stageOk = s => stage!=='first' || BASIC_CATEGORIES.includes(s[1]);
-  const av=SERVICES.filter(s=>s[5].includes(seg)&&stageOk(s)&&(cat==='Все'||s[1]===cat));
+  const av=SERVICES.filter(s=>s[5].includes(seg)&&(cat==='Все'||s[1]===cat));
   const labels={on:['Подключено','st-on'],tariff:['Входит в тариф','st-tariff'],
                 auto:['Подключено с тарифом','st-auto'],off:['','st-off']};
   let html='';
-  const cats = (cat==='Все' ? CATS : [cat]).filter(c=>stage!=='first' || BASIC_CATEGORIES.includes(c));
+  const cats = (cat==='Все' ? CATS : [cat]);
   cats.forEach(c=>{
     const items=av.filter(s=>s[1]===c);
     if(!items.length) return;
@@ -622,10 +597,8 @@ function renderServices(){
     });
     html+='</div>';
   });
-  const total=SERVICES.filter(s=>s[5].includes(seg)&&stageOk(s)).length;
-  document.getElementById('svc-sub').textContent = stage==='first'
-    ? `Для начала — ${total} базовых сервисов. Остальные откроются, когда бизнес заработает`
-    : `Показываем ${total} сервисов, подходящих вашему бизнесу. Всего в банке больше 60`;
+  const total=SERVICES.filter(s=>s[5].includes(seg)).length;
+  document.getElementById('svc-sub').textContent = `Показываем ${total} сервисов, подходящих вашему бизнесу. Всего в банке больше 60`;
   document.getElementById('svc-list').innerHTML=html||'<div class="card empty"><div class="box">▤</div><b>В этой категории пока пусто</b><p>Для вашего сегмента здесь ничего нет</p></div>';
 }
 
@@ -824,34 +797,99 @@ async function loadCredit(){
 // Подсказки тоже зависят от второй оси: "active" — про обороты и лимиты
 // (прежнее содержимое PANEL), "first" — про открытие и первые шаги.
 const PANEL={
-  active:{
-    self:[['Отложить на налог','По вашим чекам за июль — 18 400 ₽'],
-          ['Есть подходящая субсидия','Для самозанятых в вашем регионе'],
-          ['Клиент платит второй месяц подряд','Предложите абонемент']],
-    ip:[['Оборот вырос на 22%','Можно увеличить лимит овердрафта'],
-        ['Три платежа новому контрагенту','Проверить перед следующим переводом'],
-        ['Помещение не застраховано','Подобрать покрытие']],
-    ooo:[['Подходите под программу 1764','Ставка ниже рыночной на оборудование'],
-         ['Две подписки подключились с тарифом','Посмотреть, что списывается'],
-         ['Приближается срок по ковенанту','Отчёт о продажах до 28.05']],
-  },
-  first:{
-    self:[['Как оформить самозанятость','Регистрация в «Мой налог» за 5 минут'],
-          ['Есть подходящая субсидия','Для тех, кто только начинает'],
-          ['Курс по деньгам для старта','Бесплатно в Альфа-Курс']],
-    ip:[['Как открыть ИП','Пошагово, с документами и сроками'],
-        ['Подберём господдержку для старта','Гранты и льготные кредиты на открытие'],
-        ['С чего начать учёт','Базовый пакет отчётности на первый год']],
-    ooo:[['Как зарегистрировать ООО','Устав, учредители, уставный капитал'],
-         ['Подберём господдержку для старта','Гранты и льготные кредиты на открытие'],
-         ['Открыть счёт для нового бизнеса','Онлайн, без визита в офис']],
-  },
+  self:[['Отложить на налог','По вашим чекам за июль — 18 400 ₽'],
+        ['Есть подходящая субсидия','Для самозанятых в вашем регионе'],
+        ['Клиент платит второй месяц подряд','Предложите абонемент']],
+  ip:[['Оборот вырос на 22%','Можно увеличить лимит овердрафта'],
+      ['Три платежа новому контрагенту','Проверить перед следующим переводом'],
+      ['Помещение не застраховано','Подобрать покрытие']],
+  ooo:[['Подходите под программу 1764','Ставка ниже рыночной на оборудование'],
+       ['Две подписки подключились с тарифом','Посмотреть, что списывается'],
+       ['Приближается срок по ковенанту','Отчёт о продажах до 28.05']],
 };
 function renderPanel(){
-  document.getElementById('panel-body').innerHTML=PANEL[stage][seg].map(s=>
+  document.getElementById('panel-body').innerHTML=PANEL[seg].map(s=>
     `<button class="sugg"><b>${s[0]}</b><span>${s[1]}</span></button>`).join('');
 }
 function togglePanel(){document.getElementById('panel').classList.toggle('hidden')}
+
+// Разделяет два разных набора документов, которые часто путают: регистрация
+// статуса (самозанятость/ИП/ООО) и открытие расчётного счёта — у самозанятых
+// отдельного пакета на открытие счёта нет, поэтому account=null.
+const DOCS = {
+  self:{
+    registration:{
+      heading:'Регистрация самозанятости',
+      items:[
+        'Паспорт РФ — серия, номер, дата выдачи, код подразделения',
+        'ИНН — если его нет, система сгенерирует сама одновременно с регистрацией',
+        'Вид деятельности',
+        'Регион, где будете оказывать услуги',
+        'Телефон и e-mail — для связи с налоговой, уведомлений и СМС-подтверждения',
+      ],
+      note:'Оформляется в приложении «Мой налог», через Госуслуги или прямо в мобильном приложении Альфы.',
+    },
+    account:null,
+  },
+  ip:{
+    registration:{
+      heading:'Регистрация ИП',
+      items:[
+        'Паспортные данные','СНИЛС','ИНН (если есть)','Гражданство',
+        'Адрес регистрации, при наличии — временная регистрация',
+        'Коды ОКВЭД (виды деятельности)','Телефон и e-mail','Система налогообложения',
+      ],
+      note:'Остальные документы банк собирает сам, госпошлину платить не нужно. Регистрация доступна только клиентам Альфы — если вы ещё не клиент, нужно подписать ДКБО; электронная подпись выпускается бесплатно.',
+    },
+    account:{
+      heading:'Открытие расчётного счёта',
+      items:[
+        'Паспорт',
+        'Лицензии и иные разрешительные документы — при наличии и необходимости',
+        'Карточка с образцами подписей и печати — только при оформлении бумажных платёжных документов и чековой книжки',
+      ],
+      note:null,
+    },
+  },
+  ooo:{
+    registration:{
+      heading:'Регистрация ООО',
+      items:[
+        'Всё то же, что для ИП, — по каждому учредителю',
+        'Название ООО','Юридический адрес','Данные руководителя',
+        'Размер и распределение долей уставного капитала','Коды ОКВЭД',
+      ],
+      note:'Из документов физически нужны только паспорт и СНИЛС каждого учредителя — устав готовится банком.',
+    },
+    account:{
+      heading:'Открытие расчётного счёта',
+      items:[
+        'Устав','Выписка или лист записи из ЕГРЮЛ','Свидетельство о постановке на налоговый учёт',
+        'Паспорт директора',
+        'Документы о полномочиях руководителя — приказ, решение участника или протокол собрания',
+        'Документы, подтверждающие полномочия лиц, указанных в карточке, на распоряжение деньгами',
+        'Карточка с образцами подписей и оттиском печати, заверенная нотариально',
+        'Лицензия — при необходимости',
+        'Документы, подтверждающие юридический адрес — договор аренды или свидетельство о праве собственности',
+        'Сведения о деловой репутации — если есть',
+        'Информация о бенефициарах и выгодоприобретателях — при наличии',
+      ],
+      note:'Заявление, анкета клиента и договор РКО заполняются прямо в банке.',
+    },
+  },
+};
+function renderDocs(){
+  const d = DOCS[seg];
+  const block = sec => sec ? `
+    <div style="margin-bottom:14px">
+      <div class="cat-h" style="margin:0 0 8px">${sec.heading}</div>
+      <ul style="padding-left:18px;font-size:13px;color:var(--ink-2);line-height:1.6">
+        ${sec.items.map(i=>`<li>${i}</li>`).join('')}
+      </ul>
+      ${sec.note ? `<p style="color:var(--muted);font-size:12.5px;margin-top:6px">${sec.note}</p>` : ''}
+    </div>` : '';
+  document.getElementById('docs-body').innerHTML = block(d.registration) + block(d.account);
+}
 
 const VIEWS=['services','subs','risk','support','insurance','credit','stub'];
 let current='services';
@@ -873,18 +911,11 @@ function markNav(v,label){
 function setSeg(s){
   seg=s;
   document.querySelectorAll('#segsw button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));
-  renderNav();renderServices();renderPanel();
+  renderNav();renderServices();renderPanel();renderDocs();
   if(!MENUS[seg].items.some(i=>i[3]===current)) go('services');
   else markNav(current);
 }
-function setStage(s){
-  stage=s;
-  cat='Все'; // категории для "первого бизнеса" — другой набор, не тащим старый выбор
-  document.querySelectorAll('#stagesw button').forEach(b=>b.classList.toggle('on',b.dataset.st===s));
-  renderNav();renderChips();renderServices();renderPanel();
-}
-
-renderNav();renderChips();renderServices();renderPickers();renderPanel();
+renderNav();renderChips();renderServices();renderPickers();renderPanel();renderDocs();
 </script>
 </body>
 </html>
