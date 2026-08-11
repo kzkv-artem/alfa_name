@@ -289,22 +289,23 @@
       <section id="v-credit" class="hidden">
         <h1>Кредиты</h1>
         <p class="sub" id="cr-sub">Доступные продукты и действующие договоры</p>
-        <div class="card" style="padding:16px 18px;margin-bottom:14px">
-          <div class="cat-h" style="margin:0 0 8px">Полнота данных для прогноза</div>
-          <div class="row" style="padding:9px 0"><div class="nm">Глубина истории транзакций</div><div class="amt" id="cr-dq-depth">—</div></div>
-          <div class="row" style="padding:9px 0"><div class="nm">Вероятность разрыва</div><div class="amt" id="cr-dq-confidence">—</div></div>
-          <p style="color:var(--muted);font-size:12.5px;margin-top:10px">Чем больше операций проходит через Альфу, тем точнее прогноз.</p>
-        </div>
-        <div class="alert alert-ai">
-          <span class="mk">ИИ</span>
-          <div><b id="cr-alert-title">Загрузка…</b><span id="cr-alert-body"></span></div>
-        </div>
         <div class="card"><table>
           <thead><tr><th>Продукт</th><th>№ договора</th><th style="text-align:right">Доступно</th><th style="text-align:right">Задолженность</th></tr></thead>
           <tbody>
             <tr><td>Возобновляемая кредитная линия</td><td>0CVI6L</td><td class="num">1 940 800,00 ₽</td><td class="num">2 744 034,72 ₽</td></tr>
             <tr><td>Овердрафт</td><td>09S88L</td><td class="num">500 000,00 ₽</td><td class="num">0,00 ₽</td></tr>
           </tbody></table></div>
+      </section>
+
+      <!-- ===== КАССОВЫЙ РАЗРЫВ ===== -->
+      <section id="v-cashgap" class="hidden">
+        <h1>Кассовый разрыв</h1>
+        <p class="sub">Прогноз по операциям на счёте — на 21 день вперёд</p>
+        <div class="kv-grid" id="cg-stats"></div>
+        <div class="alert alert-ai" style="margin-top:18px">
+          <span class="mk">ИИ</span>
+          <div><b id="cg-alert-title">Загрузка…</b><span id="cg-alert-body"></span></div>
+        </div>
       </section>
 
       <!-- ===== ЗАГЛУШКА ===== -->
@@ -334,7 +335,8 @@ const MENUS = {
   self:{org:'Ирина Соколова',person:'Самозанятая',items:[
     ['profile','⌂','Личный кабинет','profile'],
     ['sep'],
-    ['money','◎','Деньги','stub'],['checks','▤','Чеки и налог','stub'],['clients','⚇','Клиенты','stub'],
+    ['money','◎','Деньги','stub'],['cashgap','∿','Кассовый разрыв','cashgap','ai'],
+    ['checks','▤','Чеки и налог','stub'],['clients','⚇','Клиенты','stub'],
     ['sep'],
     ['risk','⚓','Альфа Штурман','risk','ai'],['ins','⛨','Страхование','insurance','ai'],['sup','★','Господдержка','support','ai'],
     ['sep'],
@@ -343,7 +345,7 @@ const MENUS = {
     ['profile','⌂','Личный кабинет','profile'],
     ['sep'],
     ['pay','＋','Счета и платежи','stub'],['stmt','▤','Выписка','stub'],['cards','▭','Карты','stub'],
-    ['cred','％','Кредиты','credit'],
+    ['cashgap','∿','Кассовый разрыв','cashgap','ai'],['cred','％','Кредиты','credit'],
     ['sep'],
     ['risk','⚓','Альфа Штурман','risk','ai'],['ins','⛨','Страхование','insurance','ai'],['sup','★','Господдержка','support','ai'],
     ['sep'],
@@ -352,7 +354,7 @@ const MENUS = {
     ['profile','⌂','Личный кабинет','profile'],
     ['sep'],
     ['pay','＋','Счета и платежи','stub'],['stmt','▤','Выписка','stub'],
-    ['contr','⚇','Контрагенты','stub'],['cred','％','Кредиты','credit'],
+    ['contr','⚇','Контрагенты','stub'],['cashgap','∿','Кассовый разрыв','cashgap','ai'],['cred','％','Кредиты','credit'],
     ['sal','▧','Зарплатный проект','stub'],
     ['sep'],
     ['risk','⚓','Альфа Штурман','risk','ai'],['ins','⛨','Страхование','insurance','ai'],['sup','★','Господдержка','support','ai'],
@@ -845,42 +847,52 @@ async function runIns(){
 // GET /cashflow/clients/client_1/decision. gap_date/gap_amount/recommended_product —
 // детерминированные поля (CatBoost + naive-прогноз), но если alert=true, сам
 // эндпоинт всё равно попутно зовёт LLM за текстом message — и может вернуть
-// 503 llm_unavailable, даже если нам нужны только эти три поля.
-async function loadCredit(){
-  const title=document.getElementById('cr-alert-title');
-  const body=document.getElementById('cr-alert-body');
-  const dqDepth=document.getElementById('cr-dq-depth');
-  const dqConfidence=document.getElementById('cr-dq-confidence');
+// 503 llm_unavailable, даже если нам нужны только эти поля. Показываем плитками
+// (.kv-grid — тот же приём, что и в «Личном кабинете»), а не строчками: тут
+// не таблица реквизитов, а несколько независимых показателей одного прогноза.
+async function loadCashGap(){
+  const stats=document.getElementById('cg-stats');
+  const title=document.getElementById('cg-alert-title');
+  const body=document.getElementById('cg-alert-body');
+  stats.innerHTML='<div class="kv"><div class="k">Прогноз</div><div class="v">Считаем…</div></div>';
   title.textContent='Считаем прогноз по счёту…';
   body.textContent='';
-  dqDepth.textContent='—';
-  dqConfidence.textContent='—';
 
   let d;
   try{ d = await apiFetch('/cashflow/clients/client_1/decision') }
   catch(err){
+    stats.innerHTML='';
     title.textContent = err && err.code==='llm_unavailable' ? 'ИИ временно недоступен' : 'Не получилось загрузить прогноз';
     body.textContent = (err && err.message) || '';
     return;
   }
 
-  // Оба поля — из того же ответа, второй запрос не нужен. history_depth_days
-  // считается на бэкенде как разница между первой и последней транзакцией
-  // клиента. confidence_level — это вероятность разрыва (predict_proba
-  // модели на событие gap_within_21d), не «точность» в смысле метрики
-  // качества — такой метрики у нас нет, поэтому и не показываем её отдельно.
-  // Порог "высокая" — alert_threshold из ответа (зеркалит
+  // history_depth_days считается на бэкенде как разница между первой и
+  // последней транзакцией клиента. confidence_level — это вероятность
+  // разрыва (predict_proba модели на событие gap_within_21d), не «точность»
+  // в смысле метрики качества — такой метрики у нас нет. Порог "высокая" —
+  // alert_threshold из ответа (зеркалит
   // alfa_agent/cashflow/agent.py::MIN_CONFIDENCE_TO_ALERT), не захардкожен.
-  dqDepth.textContent = d.history_depth_days!=null ? `${d.history_depth_days} дн.` : 'нет данных';
+  const depthText = d.history_depth_days!=null ? `${d.history_depth_days} дн.` : 'нет данных';
+  let probText='нет данных', probBadge='';
   if(d.confidence_level!=null){
     const pct = Math.round(d.confidence_level*100);
-    const label = d.confidence_level===0 ? 'разрыв не прогнозируется'
-      : d.confidence_level>=d.alert_threshold ? 'высокая'
-      : 'умеренная';
-    dqConfidence.textContent = `${pct}% — ${label}`;
-  } else {
-    dqConfidence.textContent = 'нет данных';
+    const level = d.confidence_level===0 ? 'разрыв не прогнозируется'
+      : d.confidence_level>=d.alert_threshold ? 'высокая' : 'умеренная';
+    probText = `${pct}%`;
+    probBadge = `<span class="st ${d.confidence_level>=d.alert_threshold?'st-auto':'st-off'}" style="margin-top:7px;display:inline-block">${level}</span>`;
   }
+
+  let tiles = `
+    <div class="kv"><div class="k">Вероятность разрыва</div><div class="v">${probText}</div>${probBadge}</div>
+    <div class="kv"><div class="k">Глубина истории транзакций</div><div class="v">${depthText}</div></div>`;
+  if(d.alert){
+    const amount = Math.abs(d.gap_amount).toLocaleString('ru-RU',{maximumFractionDigits:0});
+    tiles += `
+      <div class="kv"><div class="k">Дата возможного разрыва</div><div class="v">${formatDateRu(d.gap_date)}</div></div>
+      <div class="kv"><div class="k">Не хватит примерно</div><div class="v">${amount} ₽</div></div>`;
+  }
+  stats.innerHTML = tiles;
 
   if(!d.alert){
     title.textContent='Кассовых разрывов не ожидается';
@@ -888,17 +900,13 @@ async function loadCredit(){
     return;
   }
 
-  const amount = Math.abs(d.gap_amount).toLocaleString('ru-RU',{maximumFractionDigits:0});
-  title.textContent = `Возможен кассовый разрыв ${formatDateRu(d.gap_date)} — не хватит ≈${amount} ₽`;
-
   const severityRu = {high:'высокая', medium:'средняя'}[d.severity] || d.severity || '—';
-  const confidencePct = d.confidence_level!=null ? Math.round(d.confidence_level*100)+'%' : '—';
   const recText = d.recommended_product
     ? `Рекомендуем: ${d.recommended_product}. `
     : 'Рекомендуем заранее проверить график платежей. ';
+  title.textContent = `Возможен кассовый разрыв ${formatDateRu(d.gap_date)}`;
   body.innerHTML = recText
-    + `<span class="st ${d.severity==='high'?'st-auto':'st-tariff'}">Серьёзность: ${severityRu}</span> `
-    + `Уверенность модели: ${confidencePct}.`;
+    + `<span class="st ${d.severity==='high'?'st-auto':'st-tariff'}">Серьёзность: ${severityRu}</span>`;
 }
 
 // Подсказки тоже зависят от второй оси: "active" — про обороты и лимиты
@@ -965,14 +973,14 @@ function renderProfile(){
     `<div class="kv"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
 }
 
-const VIEWS=['services','subs','profile','risk','support','insurance','credit','stub'];
+const VIEWS=['services','subs','profile','risk','support','insurance','credit','cashgap','stub'];
 let current='profile';
 function go(v,label){
   current=v;
   VIEWS.forEach(x=>document.getElementById('v-'+x).classList.toggle('hidden',x!==v));
   if(v==='stub') document.getElementById('stub-title').textContent=label||'Раздел';
   if(v==='subs') renderSubs();
-  if(v==='credit') loadCredit();
+  if(v==='cashgap') loadCashGap();
   markNav(v,label);
   window.scrollTo({top:0});
 }
