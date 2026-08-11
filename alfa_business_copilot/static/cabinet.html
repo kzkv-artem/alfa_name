@@ -115,6 +115,22 @@
     font-size:14px;resize:none;margin:12px 0 12px;min-height:76px;outline:none}
   .ai-input:focus{background:#EFF0F3}
 
+  .rk-feed{display:flex;flex-direction:column;gap:10px;max-height:360px;overflow-y:auto;
+    margin:14px 0;padding-right:2px}
+  .rk-empty{color:var(--muted);font-size:13px}
+  .rk-msg{border-radius:12px;padding:11px 14px;font-size:13.5px;line-height:1.5;max-width:86%}
+  .rk-user{align-self:flex-end;background:#111;color:#fff}
+  .rk-agent{align-self:flex-start;background:#F5F2FF;border:1px solid #DDD5FA}
+  .rk-agent.thinking{color:var(--muted);font-style:italic}
+  .rk-agent.typing::after{content:'▌';display:inline-block;margin-left:2px;
+    animation:rkblink 1s steps(1) infinite}
+  @keyframes rkblink{50%{opacity:0}}
+  .rk-error{background:#FFF7E8;border:1px solid #FBE3B4;color:#8A5A00}
+  .rk-row{display:flex;gap:10px}
+  .rk-row input{flex:1;background:#F4F5F7;border:none;border-radius:11px;padding:12px 15px;
+    font-size:13.5px;outline:none}
+  .rk-row input:focus{background:#EFF0F3}
+
   .match{padding:16px 18px;margin-bottom:12px;display:flex;gap:16px;align-items:flex-start}
   .match .pct{font-size:19px;font-weight:700;letter-spacing:-.4px;color:#0E7A55;min-width:52px}
   .match .bd{flex:1}
@@ -205,6 +221,28 @@
           Отключение вступает в силу со следующего расчётного периода</p>
       </section>
 
+      <!-- ===== АЛЬФА ШТУРМАН ===== -->
+      <section id="v-risk" class="hidden">
+        <h1>Альфа Штурман</h1>
+        <p class="sub">Обсудите риски открытия или роста бизнеса — агент считает и объясняет, а не гадает</p>
+        <div class="card ai-box">
+          <div class="ai-head"><div class="ai-dot">ИИ</div><h2>Спросите про риски</h2></div>
+          <p style="color:var(--muted);font-size:13px">Расскажите о бизнесе — какая сфера, какой регион — агент оценит риск и объяснит, из чего он складывается</p>
+          <div class="rk-feed" id="risk-feed">
+            <div class="rk-empty">Например: «хочу открыть студию маникюра в Казани»</div>
+          </div>
+          <div class="rk-row">
+            <input id="risk-input" placeholder="Например: какие риски у моей сферы" aria-label="Сообщение агенту" autocomplete="off" onkeydown="if(event.key==='Enter')sendRisk()">
+            <button class="btn btn-primary" onclick="sendRisk()">Спросить</button>
+          </div>
+          <div class="chips" style="margin-top:12px">
+            <button class="chip" onclick="askRisk('хочу открыть студию маникюра в Казани')">Хочу открыть студию маникюра в Казани</button>
+            <button class="chip" onclick="askRisk('какие риски у моей сферы')">Какие риски у моей сферы</button>
+            <button class="chip" onclick="askRisk('сколько нужно на старт')">Сколько нужно на старт</button>
+          </div>
+        </div>
+      </section>
+
       <!-- ===== ГОСПОДДЕРЖКА ===== -->
       <section id="v-support" class="hidden">
         <h1>Господдержка</h1>
@@ -289,14 +327,14 @@ const MENUS = {
   self:{org:'Ирина Соколова',person:'Самозанятая',items:[
     ['money','◎','Деньги','stub'],['checks','▤','Чеки и налог','stub'],['clients','⚇','Клиенты','stub'],
     ['sep'],
-    ['ins','⛨','Страхование','insurance','ai'],['sup','★','Господдержка','support','ai'],
+    ['risk','⚓','Альфа Штурман','risk','ai'],['ins','⛨','Страхование','insurance','ai'],['sup','★','Господдержка','support','ai'],
     ['sep'],
     ['svc','▦','Все сервисы','services'],['subs','♺','Мои подписки','subs']]},
   ip:{org:'ИП Соколова И. В.',person:'Соколова И. В.',items:[
     ['pay','＋','Счета и платежи','stub'],['stmt','▤','Выписка','stub'],['cards','▭','Карты','stub'],
     ['cred','％','Кредиты','credit'],
     ['sep'],
-    ['ins','⛨','Страхование','insurance','ai'],['sup','★','Господдержка','support','ai'],
+    ['risk','⚓','Альфа Штурман','risk','ai'],['ins','⛨','Страхование','insurance','ai'],['sup','★','Господдержка','support','ai'],
     ['sep'],
     ['svc','▦','Все сервисы','services'],['subs','♺','Мои подписки','subs']]},
   ooo:{org:'ООО «ФИНМАРКЕТ»',person:'Дьяков М. Х.',items:[
@@ -304,7 +342,7 @@ const MENUS = {
     ['contr','⚇','Контрагенты','stub'],['cred','％','Кредиты','credit'],
     ['sal','▧','Зарплатный проект','stub'],
     ['sep'],
-    ['ins','⛨','Страхование','insurance','ai'],['sup','★','Господдержка','support','ai'],
+    ['risk','⚓','Альфа Штурман','risk','ai'],['ins','⛨','Страхование','insurance','ai'],['sup','★','Господдержка','support','ai'],
     ['sep'],
     ['svc','▦','Все сервисы','services'],['subs','♺','Мои подписки','subs']]}
 };
@@ -370,8 +408,9 @@ const SUP_CHIPS=['Бьюти','Креативные индустрии','Общ�
 const INS_CHIPS=['Помещение и ремонт','Оборудование','Ответственность перед клиентом','Сотрудники','Перерыв в работе','Груз'];
 
 // Один session_id на загрузку страницы, шлём его в каждом запросе к API
-// (заголовком — сами эндпоинты сегодня его не читают, кроме
-// /acquisition/messages, которого в этом макете пока нет).
+// заголовком — сами эндпоинты его сегодня не читают, кроме
+// /acquisition/messages (Альфа Штурман), но у него своя сессия отдельным
+// полем в теле запроса, а не этим заголовком — см. RISK_SESSION_ID ниже.
 const SESSION_ID = crypto.randomUUID();
 
 // client_id Алины Гарифуллиной в gov_support — второй клиент, сеется в
@@ -407,6 +446,94 @@ function apiErrorHTML(err){
   return `<div class="alert alert-warn"><span class="mk">!</span><div><b>Не получилось загрузить</b>${(err&&err.message)||'Сервис недоступен'}</div></div>`;
 }
 
+// Альфа Штурман — тот же RiskAdvisorAgent/agent.py, что и на лендингах,
+// но здесь встроен прямо в кабинет как отдельный раздел меню. Свой
+// session_id: диалог о рисках не должен путаться с другими сессиями.
+const RISK_SESSION_ID = crypto.randomUUID();
+let riskBusy = false;
+
+function riskErrorText(err){
+  if(err && err.code==='llm_unavailable')
+    return 'ИИ временно недоступен — провайдер модели не отвечает, похоже, исчерпан дневной лимит бесплатного тарифа. Попробуйте ещё раз чуть позже.';
+  if(err && err.code==='llm_config_error')
+    return 'ИИ не настроен — на сервере не задан ключ доступа к модели.';
+  return (err && err.message) || 'Не получилось отправить сообщение. Попробуйте ещё раз.';
+}
+
+function appendRiskMsg(cls, text){
+  const feed = document.getElementById('risk-feed');
+  const empty = feed.querySelector('.rk-empty');
+  if(empty) empty.remove();
+  const div = document.createElement('div');
+  div.className = 'rk-msg ' + cls;
+  div.textContent = text;
+  feed.appendChild(div);
+  feed.scrollTop = feed.scrollHeight;
+  return div;
+}
+
+const RISK_REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function typeRiskMsg(el, text){
+  if(RISK_REDUCED_MOTION || !text){ el.textContent = text; return Promise.resolve(); }
+  const feed = document.getElementById('risk-feed');
+  const totalMs = Math.min(2200, Math.max(400, text.length * 12));
+  const tickMs = 30;
+  const perTick = Math.max(1, Math.ceil(text.length / (totalMs / tickMs)));
+  el.textContent = '';
+  el.classList.add('typing');
+  let i = 0;
+  return new Promise(resolve=>{
+    const timer = setInterval(()=>{
+      i = Math.min(text.length, i + perTick);
+      el.textContent = text.slice(0, i);
+      feed.scrollTop = feed.scrollHeight;
+      if(i >= text.length){
+        clearInterval(timer);
+        el.classList.remove('typing');
+        resolve();
+      }
+    }, tickMs);
+  });
+}
+
+async function sendRisk(text){
+  const input = document.getElementById('risk-input');
+  const message = (text!==undefined ? text : input.value).trim();
+  if(!message || riskBusy) return;
+  input.value = '';
+  riskBusy = true;
+  appendRiskMsg('rk-user', message);
+  const thinking = appendRiskMsg('rk-agent thinking', 'Печатает…');
+  try{
+    const res = await fetch('/acquisition/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({session_id: RISK_SESSION_ID, message})
+    });
+    let data = null;
+    try{ data = await res.json() }catch(e){}
+    if(!res.ok){
+      const err = new Error((data&&(data.message||data.detail)) || `HTTP ${res.status}`);
+      err.status = res.status;
+      err.code = data && data.error;
+      throw err;
+    }
+    thinking.className = 'rk-msg rk-agent';
+    await typeRiskMsg(thinking, data.reply);
+  }catch(err){
+    thinking.textContent = riskErrorText(err);
+    thinking.className = 'rk-msg rk-agent rk-error';
+  }finally{
+    riskBusy = false;
+  }
+}
+
+function askRisk(text){
+  document.getElementById('risk-input').value = text;
+  sendRisk(text);
+}
+
 function formatDateRu(iso){
   const [y,m,d]=iso.split('-');
   const months=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
@@ -433,7 +560,7 @@ let seg='ip', stage='first', cat='Все', catOpen='Все';
 // «Кредиты»/«Пульс рынка» для «первого бизнеса» не поднимаются искусственно
 // туда, где их и так нет (например, у self нет пункта «Кредиты» вообще) —
 // byKey просто не находит такой пункт и пропускает его.
-const STAGE_PRIORITY = { first:['sup','edu'], active:['cred','pulse'] };
+const STAGE_PRIORITY = { first:['risk','sup','edu'], active:['cred','pulse'] };
 // Пункты, которых нет в MENUS ни у одного сегмента, но которые должна уметь
 // поднять вторая ось — ведут на общую заглушку 'stub', как и другие ещё не
 // собранные разделы (см. секцию v-stub).
@@ -726,7 +853,7 @@ function renderPanel(){
 }
 function togglePanel(){document.getElementById('panel').classList.toggle('hidden')}
 
-const VIEWS=['services','subs','support','insurance','credit','stub'];
+const VIEWS=['services','subs','risk','support','insurance','credit','stub'];
 let current='services';
 function go(v,label){
   current=v;
