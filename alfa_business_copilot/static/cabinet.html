@@ -194,8 +194,23 @@
   .sugg span{color:var(--muted);font-size:12px}
   .hidden{display:none !important}
 
+  .menu-btn{display:none}
+  .sidebar-backdrop{display:none}
+
   @media (max-width:900px){
-    .sidebar{display:none}.content{padding:18px 16px 90px}h1{font-size:24px}
+    .menu-btn{display:grid;width:32px;height:32px;border-radius:9px;place-items:center;color:var(--ink-2)}
+    .menu-btn:hover{background:#F5F6F8}
+    .menu-btn svg{width:18px;height:18px}
+
+    .sidebar{position:fixed;top:0;left:0;z-index:60;transform:translateX(-100%);
+      transition:transform .2s ease;box-shadow:none}
+    .sidebar.open{transform:translateX(0);box-shadow:10px 0 28px rgba(0,0,0,.18)}
+
+    .sidebar-backdrop{display:block;position:fixed;inset:0;z-index:55;background:rgba(15,15,15,.4);
+      opacity:0;pointer-events:none;transition:opacity .2s ease}
+    .sidebar-backdrop.open{opacity:1;pointer-events:auto}
+
+    .content{padding:18px 16px 90px}h1{font-size:24px}
     .segsw{display:none}.fab{right:14px;bottom:14px}.panel{width:min(328px,calc(100vw - 28px))}
   }
 </style>
@@ -213,8 +228,13 @@
     </div>
   </aside>
 
+  <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
   <div class="main">
     <header class="topbar">
+      <button class="menu-btn" onclick="toggleSidebar()" aria-label="Меню разделов">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 6h14M3 10h14M3 14h14"/></svg>
+      </button>
       <div class="search">
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M16.5 16.5l-4-4"/></svg>
         Поиск
@@ -1262,6 +1282,18 @@ function go(v,label){
   if(v==='cashgap') loadCashGap();
   markNav(v,label);
   window.scrollTo({top:0});
+  closeSidebar();
+}
+// Бургер-меню на мобильных — на десктопе классы просто ни на что не влияют
+// (.sidebar там position:sticky, не fixed), поэтому toggle/closeSidebar
+// безопасно вызывать всегда, без проверки ширины экрана.
+function toggleSidebar(){
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.getElementById('sidebar-backdrop').classList.toggle('open');
+}
+function closeSidebar(){
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sidebar-backdrop').classList.remove('open');
 }
 function markNav(v,label){
   document.querySelectorAll('.nav-item').forEach(n=>{
